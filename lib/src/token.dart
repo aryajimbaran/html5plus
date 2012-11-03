@@ -100,7 +100,7 @@ class ProcessingInstructionToken extends Token {
   String data;
   bool correct;
 
-  ProcessingInstructionToken({this.target, this.data, this.correct: false});
+  ProcessingInstructionToken({this.target: "", this.data: "", this.correct: false});
   int get kind => TokenKind.processingInstruction;
 }
 
