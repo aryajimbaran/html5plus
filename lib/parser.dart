@@ -340,6 +340,9 @@ class HtmlParser {
             case TokenKind.doctype:
               newToken = phase_.processDoctype(newToken);
               break;
+            case TokenKind.processingInstruction:
+              newToken = phase_.processProcessingInstruction(newToken);
+              break;
           }
         }
       }
@@ -591,6 +594,10 @@ class Phase {
     tree.insertComment(token, tree.openElements.last);
   }
 
+  Token processProcessingInstruction(ProcessingInstructionToken token) {
+    tree.insertProcessingInstruction(token, tree.openElements.last);
+  }
+
   Token processDoctype(DoctypeToken token) {
     parser.parseError(token.span, "unexpected-doctype");
   }
@@ -640,6 +647,10 @@ class InitialPhase extends Phase {
 
   Token processComment(CommentToken token) {
     tree.insertComment(token, tree.document);
+  }
+
+  Token processProcessingInstruction(ProcessingInstructionToken token) {
+    tree.insertProcessingInstruction(token, tree.document);
   }
 
   Token processDoctype(DoctypeToken token) {
@@ -792,6 +803,10 @@ class BeforeHtmlPhase extends Phase {
 
   Token processComment(CommentToken token) {
     tree.insertComment(token, tree.document);
+  }
+
+  Token processProcessingInstruction(ProcessingInstructionToken token) {
+    tree.insertProcessingInstruction(token, tree.document);
   }
 
   Token processSpaceCharacters(SpaceCharactersToken token) {
@@ -3069,6 +3084,10 @@ class AfterBodyPhase extends Phase {
     tree.insertComment(token, tree.openElements[0]);
   }
 
+  Token processProcessingInstruction(ProcessingInstructionToken token) {
+    tree.insertProcessingInstruction(token, tree.openElements[0]);
+  }
+
   Token processCharacters(CharactersToken token) {
     parser.parseError(token.span, "unexpected-char-after-body");
     parser.phase = parser._inBodyPhase;
@@ -3237,6 +3256,10 @@ class AfterAfterBodyPhase extends Phase {
     tree.insertComment(token, tree.document);
   }
 
+  Token processProcessingInstruction(ProcessingInstructionToken token) {
+    tree.insertProcessingInstruction(token, tree.document);
+  }
+
   Token processSpaceCharacters(SpaceCharactersToken token) {
     return parser._inBodyPhase.processSpaceCharacters(token);
   }
@@ -3281,6 +3304,10 @@ class AfterAfterFramesetPhase extends Phase {
 
   Token processComment(CommentToken token) {
     tree.insertComment(token, tree.document);
+  }
+
+  Token processProcessingInstruction(ProcessingInstructionToken token) {
+    tree.insertProcessingInstruction(token, tree.document);
   }
 
   Token processSpaceCharacters(SpaceCharactersToken token) {

@@ -490,3 +490,13 @@ class NodeList extends ListProxy<Node> {
     super.insertRange(start, 1, _setParent(initialValue));
   }
 }
+
+class ProcessingInstruction extends Node {
+  final String target;
+  String data;
+
+  ProcessingInstruction(String target, [String this.data=""])
+  : super(target), this.target = target;
+
+  String toString() => "<?$target $data?>";
+}

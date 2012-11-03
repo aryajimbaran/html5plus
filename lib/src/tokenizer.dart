@@ -75,6 +75,7 @@ class HtmlTokenizer implements Iterator<Token> {
 
   TagToken get currentTagToken => currentToken;
   DoctypeToken get currentDoctypeToken => currentToken;
+  ProcessingInstructionToken get currentProcessingInstructionToken => currentToken;
 
   bool get hasNext {
     if (stream.errors.length > 0) return true;
@@ -463,13 +464,9 @@ class HtmlTokenizer implements Iterator<Token> {
           "expected-tag-name-but-got-right-bracket"));
       _addToken(new CharactersToken("<>"));
       state = dataState;
-    } else if (data == "?") {
-      // XXX In theory it could be something besides a tag name. But
-      // do we really care?
-      _addToken(new ParseErrorToken(
-          "expected-tag-name-but-got-question-mark"));
-      stream.unget(data);
-      state = bogusCommentState;
+    } else if (data == "?") { //processing instruction
+      currentToken = new ProcessingInstructionToken(correct: true);
+      state = processingInstructionState;
     } else {
       // XXX
       _addToken(new ParseErrorToken("expected-tag-name"));
@@ -1831,5 +1828,94 @@ class HtmlTokenizer implements Iterator<Token> {
     state = dataState;
     return true;
   }
-}
 
+  bool processingInstructionState() {
+    var data = stream.char();
+    if (isWhitespace(data)) {
+      return true;
+    } else if (data == "?") {
+      _addToken(new ParseErrorToken(
+          "expected-processing-instruction-target-but-got-question-mark"));
+      stream.unget(data);
+      state = bogusCommentState;
+    } else if (data === EOF) {
+      _addToken(new ParseErrorToken(
+          "expected-processing-instruction-target-but-got-eof"));
+      state = bogusCommentState;
+    } else {
+      currentProcessingInstructionToken.target = data;
+      state = processingInstructionTargetState;
+    }
+    return true;
+  }
+
+  bool processingInstructionTargetState() {
+    var data = stream.char();
+    if (isWhitespace(data)) {
+      state = afterProcessingInstructionTargetState;
+    } else if (data == "?") {
+      state = processingInstructionEndState;
+    } else if (data === EOF) {
+      _addToken(new ParseErrorToken(
+          "expected-processing-instruction-target-but-got-eof"));
+      currentProcessingInstructionToken.correct = false;
+      _addToken(currentToken);
+      state = dataState;
+    } else {
+      currentProcessingInstructionToken.target =
+        '${currentProcessingInstructionToken.target}${data}';
+    }
+    return true;
+  }
+
+  bool afterProcessingInstructionTargetState() {
+    var data = stream.char();
+    if (isWhitespace(data)) {
+      return true;
+    } else if (data == "?") {
+      state = processingInstructionEndState;
+    } else if (data === EOF) {
+      _addToken(new ParseErrorToken(
+          "expected-processing-instruction-data-but-got-eof"));
+      currentProcessingInstructionToken.correct = false;
+      _addToken(currentToken);
+      state = dataState;
+    } else {
+      currentProcessingInstructionToken.data = data;
+      state = processingInstructionDataState;
+    }
+    return true;
+  }
+
+  bool processingInstructionDataState() {
+    var data = stream.char();
+    if (data == "?") {
+      state = processingInstructionEndState;
+    } else if (data === EOF) {
+      _addToken(new ParseErrorToken(
+          "expected-processing-instruction-closing-tag-but-got-eof"));
+      currentProcessingInstructionToken.correct = false;
+      _addToken(currentToken);
+      state = dataState;
+    } else {
+      currentProcessingInstructionToken.data =
+        '${currentProcessingInstructionToken.data}${data}';
+    }
+    return true;
+  }
+
+  bool processingInstructionEndState() {
+    var data = stream.char();
+    if (data == '>') {
+      currentProcessingInstructionToken.data =
+        currentProcessingInstructionToken.data.trim();
+    } else {
+      _addToken(new ParseErrorToken(
+          "expected-processing-instruction-closing-tag-but-got-eof"));
+      currentProcessingInstructionToken.correct = false;
+    }
+    _addToken(currentToken);
+    state = dataState;
+    return true;
+  }
+}

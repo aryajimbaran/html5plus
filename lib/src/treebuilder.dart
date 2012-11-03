@@ -244,7 +244,15 @@ class TreeBuilder {
     parent.nodes.add(new Comment(token.data)..span = token.span);
   }
 
-    /** Create an element but don't insert it anywhere */
+  void insertProcessingInstruction(ProcessingInstructionToken token, [Node parent]) {
+    if (parent == null) {
+      parent = openElements.last;
+    }
+    parent.nodes.add(new ProcessingInstruction(token.target, token.data)
+      ..span = token.span);
+  }
+
+  /** Create an element but don't insert it anywhere */
   Element createElement(StartTagToken token) {
     var name = token.name;
     var namespace = token.namespace;

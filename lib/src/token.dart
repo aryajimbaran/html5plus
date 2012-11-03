@@ -95,6 +95,14 @@ class DoctypeToken extends Token {
   set data(value) { throw new UnsupportedError("data"); }
 }
 
+class ProcessingInstructionToken extends Token {
+  String target;
+  String data;
+  bool correct;
+
+  ProcessingInstructionToken({this.target, this.data, this.correct: false});
+  int get kind => TokenKind.processingInstruction;
+}
 
 class TokenKind {
   static const int spaceCharacters = 0;
@@ -104,4 +112,5 @@ class TokenKind {
   static const int comment = 4;
   static const int doctype = 5;
   static const int parseError = 6;
+  static const int processingInstruction = 7;
 }
