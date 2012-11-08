@@ -3,11 +3,11 @@ library parser_test;
 import 'dart:io';
 import 'package:unittest/unittest.dart';
 import 'package:unittest/vm_config.dart';
-import 'package:html5lib/dom.dart';
-import 'package:html5lib/parser.dart';
-import 'package:html5lib/src/constants.dart';
-import 'package:html5lib/src/tokenizer.dart';
-import 'package:html5lib/src/utils.dart';
+import 'package:html5plus/dom.dart';
+import 'package:html5plus/parser.dart';
+import 'package:html5plus/src/constants.dart';
+import 'package:html5plus/src/tokenizer.dart';
+import 'package:html5plus/src/utils.dart';
 import 'support.dart';
 
 // Run the parse error checks

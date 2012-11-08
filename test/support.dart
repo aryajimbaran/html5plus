@@ -2,9 +2,9 @@
 library support;
 
 import 'dart:io';
-import 'package:html5lib/src/treebuilder.dart';
-import 'package:html5lib/dom.dart';
-import 'package:html5lib/dom_parsing.dart';
+import 'package:html5plus/src/treebuilder.dart';
+import 'package:html5plus/dom.dart';
+import 'package:html5plus/dom_parsing.dart';
 
 typedef TreeBuilder TreeBuilderFactory(bool namespaceHTMLElements);
 

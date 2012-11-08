@@ -1,13 +1,12 @@
 library tokenizer;
 
 import 'dart:math';
-import 'package:html5lib/dom_parsing.dart' show SourceSpan;
-import 'package:html5lib/parser.dart' show HtmlParser;
+import '../dom_parsing.dart' show SourceSpan, isVoidElement;
+import '../parser.dart' show HtmlParser;
 import 'constants.dart';
 import 'inputstream.dart';
 import 'token.dart';
 import 'utils.dart';
-import '../dom_parsing.dart' show isVoidElement;
 
 // Group entities by their first character, for faster lookups
 

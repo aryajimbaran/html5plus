@@ -4,13 +4,13 @@ library parser_test;
 import 'dart:io';
 import 'package:unittest/unittest.dart';
 import 'package:unittest/vm_config.dart';
-import 'package:html5lib/dom.dart';
-import 'package:html5lib/parser.dart';
-import 'package:html5lib/parser_console.dart' as parser_console;
-import 'package:html5lib/src/constants.dart';
-import 'package:html5lib/src/inputstream.dart' as inputstream;
-import 'package:html5lib/src/tokenizer.dart';
-import 'package:html5lib/src/treebuilder.dart';
+import 'package:html5plus/dom.dart';
+import 'package:html5plus/parser.dart';
+import 'package:html5plus/parser_console.dart' as parser_console;
+import 'package:html5plus/src/constants.dart';
+import 'package:html5plus/src/inputstream.dart' as inputstream;
+import 'package:html5plus/src/tokenizer.dart';
+import 'package:html5plus/src/treebuilder.dart';
 import 'support.dart';
 
 main() {

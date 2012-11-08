@@ -1,7 +1,7 @@
 library inputstream;
 
 import 'dart:utf';
-import 'package:html5lib/dom_parsing.dart' show SourceFileInfo;
+import '../dom_parsing.dart' show SourceFileInfo;
 import 'char_encodings.dart';
 import 'constants.dart';
 import 'utils.dart';
@@ -58,7 +58,7 @@ class HtmlInputStream {
    * Initialises the HtmlInputStream.
    *
    * HtmlInputStream(source, [encoding]) -> Normalized stream from source
-   * for use by html5lib.
+   * for use by html5plus.
    *
    * [source] can be either a [String] or a [List<int>] containing the raw
    * bytes, or a file if [consoleSupport] is initialized.
@@ -90,7 +90,7 @@ class HtmlInputStream {
         // Unfortunately dart:io InputStream is async only, which won't work.
         throw new ArgumentError("'source' must be a String or "
             "List<int> (of bytes). You can also pass a RandomAccessFile if you"
-            "`import 'package:html5lib/parser_console.dart'` and call "
+            "`import 'package:html5plus/parser_console.dart'` and call "
             "`useConsole()`.");
       }
     }

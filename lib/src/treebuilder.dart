@@ -1,8 +1,8 @@
 /** Internals to the tree builders. */
 library treebuilder;
 
-import 'package:html5lib/dom.dart';
-import 'package:html5lib/dom_parsing.dart';
+import '../dom.dart';
+import '../dom_parsing.dart';
 import 'constants.dart';
 import 'list_proxy.dart';
 import 'token.dart';

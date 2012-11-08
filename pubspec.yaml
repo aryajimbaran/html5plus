@@ -1,7 +1,7 @@
-name: html5lib
-author: "Dart Team <misc@dartlang.org>"
-homepage: https://github.com/dart-lang/html5lib
-description: A library for working with HTML documents.
+name: html5plus
+author: "Dart Team <misc@dartlang.org>, Tom Yeh <tomyeh@rikulo.org>"
+homepage: https://github.com/tomyeh/html5plus
+description: A library for working with HTML and XML documents.
 version: 0.0.19
 dependencies:
   unittest: { sdk: unittest }

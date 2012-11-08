@@ -1,7 +1,7 @@
 /** This library contains token types used by the html5 tokenizer. */
 library token;
 
-import 'package:html5lib/dom_parsing.dart' show SourceSpan;
+import '../dom_parsing.dart' show SourceSpan;
 
 /** An html5 token. */
 abstract class Token {
