@@ -7,6 +7,7 @@ import 'constants.dart';
 import 'inputstream.dart';
 import 'token.dart';
 import 'utils.dart';
+import '../dom_parsing.dart' show isVoidElement;
 
 // Group entities by their first character, for faster lookups
 
@@ -1177,6 +1178,14 @@ class HtmlTokenizer implements Iterator<Token> {
   bool selfClosingStartTagState() {
     var data = stream.char();
     if (data == ">") {
+      final name = currentTagToken.name;
+      if (!isVoidElement(name.toLowerCase())) {
+        emitCurrentToken();
+        currentToken = new EndTagToken(name);
+        emitCurrentToken();
+        return true;
+      }
+
       currentTagToken.selfClosing = true;
       emitCurrentToken();
     } else if (data === EOF) {
