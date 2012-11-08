@@ -1,12 +1,32 @@
-html5lib in Pure Dart
-=====================
+html5plus
+=========
 
-This is a pure [Dart][dart] [html5 parser][html5parse]. It's a port of
-[html5lib](http://code.google.com/p/html5lib/) from Python. Since it's 100%
-Dart you can use it safely from a script or server side app.
+This is a fork of [html5lib](https://github.com/dart-lang/html5lib) to support XML better. For a pure [html5 parser][html5parse], please use [html5lib](https://github.com/dart-lang/html5lib) instead.
 
-Eventually the parse tree API will be compatible with [dart:html][d_html], so
-the same code will work on the client or the server.
+Differences to html5lib
+-----------------------
+
+Basically, html5plus is amlost exactly the same as html5lib, except:
+
+* Like XML, self-closing tags, such as &lt;div/>, are handled as the leaf nodes (this is the only reason this fork exists).
+
+For example,
+
+    <div/>
+    <div>foo</div>
+
+will be interpreted as follows in html5plus.
+
+    <div></div>
+    <div>foo</div>
+
+On the other hand, htm5lib and many browsers will interpret it as follows:
+
+    <div>
+      <div>foo</div>
+    </div>
+
+* Support processing instructions (a pull request was sent to html5lib).
 
 Installation
 ------------
@@ -14,19 +34,16 @@ Installation
 Add this to your `pubspec.yaml` (or create it):
 ```yaml
 dependencies:
-  html5lib: any
+  html5plus: any
 ```
-Then run the [Pub Package Manager][pub] (comes with the Dart SDK):
-
-    pub install
 
 Usage
 -----
 
 Parsing HTML is easy!
 ```dart
-import 'package:html5lib/parser.dart' show parse;
-import 'package:html5lib/dom.dart';
+import 'package:html5plus/parser.dart' show parse;
+import 'package:html5plus/dom.dart';
 
 main() {
   var document = parse(
@@ -34,59 +51,3 @@ main() {
   print(document.outerHTML);
 }
 ```
-
-You can pass a String or list of bytes to `parse`.
-There's also `parseFragment` for parsing a document fragment, and `HtmlParser`
-if you want more low level control.
-
-
-Updating
---------
-
-You can upgrade the library with:
-
-    pub update
-
-Disclaimer: the APIs are not finished. Updating may break your code. If that
-happens, you can check the
-[commit log](https://github.com/dart-lang/html5lib/commits/master), to figure
-out what the change was.
-
-If you want to avoid breakage, you can also put the version constraint in your
-`pubspec.yaml` in place of the word `any`.
-
-
-Implementation Status
----------------------
-
-Right now the tokenizer, html5parser, and simpletree are working.
-
-These files from the [html5lib directory][files] still need to be ported:
-
-* `ihatexml.py`
-* `sanitizer.py`
-* `filters/*`
-* `serializer/*`
-* some of `treebuilders/*`
-* `treewalkers/*`
-* the `tests` corresponding to the above files
-
-
-Running Tests
--------------
-
-All tests should be passing.
-```bash
-# Make sure dependencies are installed
-pub install
-
-# Run command line tests
-#export DART_SDK=path/to/dart/sdk
-test/run.sh
-```
-
-[dart]: http://www.dartlang.org/
-[html5parse]: http://dev.w3.org/html5/spec/parsing.html
-[d_html]: http://api.dartlang.org/docs/continuous/dart_html.html
-[files]: http://html5lib.googlecode.com/hg/python/html5lib/
-[pub]: http://www.dartlang.org/docs/pub-package-manager/

@@ -314,25 +314,25 @@ class DocumentType extends Node {
 }
 
 class Text extends Node {
-  String value;
+  String text;
 
-  Text(this.value) : super(null);
+  Text(this.text) : super(null);
 
   int get nodeType => Node.TEXT_NODE;
 
-  String toString() => '"$value"';
+  String toString() => '"$text"';
 
   StringBuffer _addOuterHtml(StringBuffer str) {
     // Don't escape text for certain elements, notably <script>.
     if (rcdataElements.contains(parent.tagName) ||
         parent.tagName == 'plaintext') {
-      str.add(value);
+      str.add(text);
     } else {
-      str.add(htmlSerializeEscape(value));
+      str.add(htmlSerializeEscape(text));
     }
   }
 
-  Text clone() => new Text(value);
+  Text clone() => new Text(text);
 }
 
 class Element extends Node {
