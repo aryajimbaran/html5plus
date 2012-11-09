@@ -100,6 +100,9 @@ class HtmlParser {
 
   bool framesetOK;
 
+  ///Whether CDATA is accepted even in Namespaces.html
+  final bool cdataOK;
+
   // These fields hold the different phase singletons. At any given time one
   // of them will be active.
   InitialPhase _initialPhase;
@@ -144,7 +147,8 @@ class HtmlParser {
    */
   HtmlParser(input, {String encoding, bool parseMeta: true,
       bool lowercaseElementName: true, bool lowercaseAttrName: true,
-      this.strict: false, bool generateSpans: false, TreeBuilder tree})
+      this.strict: false, bool generateSpans: false, TreeBuilder tree,
+      bool this.cdataOK: false})
       : generateSpans = generateSpans,
         tree = tree != null ? tree : new TreeBuilder(true),
         tokenizer = (input is HtmlTokenizer ? input :

@@ -1240,8 +1240,8 @@ class HtmlTokenizer implements Iterator<Token> {
       }
     } else if (charStack.last == "[" &&
         parser !== null && parser.tree.openElements.length > 0 &&
-        parser.tree.openElements.last.namespace
-            != parser.tree.defaultNamespace) {
+        (parser.cdataOK || parser.tree.openElements.last.namespace
+            != parser.tree.defaultNamespace)) {
       var matched = true;
       for (var expected in const ["C", "D", "A", "T", "A", "["]) {
         charStack.add(stream.char());
