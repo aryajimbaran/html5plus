@@ -8,6 +8,8 @@ abstract class Token {
   SourceSpan span;
 
   int get kind;
+  /** The line number that this token appears. */
+  int lineNumber;
 
   // TODO(jmesserly): it'd be nice to remove this and always use the ".data"
   // on the particular token type, since they store different kinds of data.

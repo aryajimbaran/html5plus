@@ -39,6 +39,9 @@ class HtmlInputStream {
 
   final bool generateSpans;
 
+  /** The current line number. */
+  int lineNumber = 1;
+
   List<int> _rawBytes;
 
   /** Raw UTF-16 codes, used if a Dart String is passed in. */
@@ -235,7 +238,9 @@ class HtmlInputStream {
    */
   String char() {
     if (_offset >= _chars.length) return EOF;
-    return new String.fromCharCodes([_chars[_offset++]]);
+    final cc = _chars[_offset++];
+    if (cc == NEWLINE) ++lineNumber;
+    return new String.fromCharCodes([cc]);
   }
 
   String peekChar() {
@@ -251,6 +256,7 @@ class HtmlInputStream {
     int start = _offset;
     String c;
     while ((c = peekChar()) != null && characters.contains(c) == opposite) {
+      if (c == '\n') ++lineNumber;
       _offset++;
     }
 
@@ -261,6 +267,7 @@ class HtmlInputStream {
     // Only one character is allowed to be ungotten at once - it must
     // be consumed again before any further call to unget
     if (ch != null) {
+      if (ch == '\n') --lineNumber;
       _offset--;
       assert(peekChar() == ch);
     }

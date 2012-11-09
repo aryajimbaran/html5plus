@@ -233,6 +233,7 @@ class TreeBuilder {
 
   void insertDoctype(DoctypeToken token) {
     var doctype = new DocumentType(token.name, token.publicId, token.systemId)
+        ..lineNumber = token.lineNumber
         ..span = token.span;
     document.nodes.add(doctype);
   }
@@ -241,7 +242,9 @@ class TreeBuilder {
     if (parent == null) {
       parent = openElements.last;
     }
-    parent.nodes.add(new Comment(token.data)..span = token.span);
+    parent.nodes.add(new Comment(token.data)
+        ..lineNumber = token.lineNumber
+        ..span = token.span);
   }
 
   void insertProcessingInstruction(ProcessingInstructionToken token, [Node parent]) {
@@ -249,7 +252,8 @@ class TreeBuilder {
       parent = openElements.last;
     }
     parent.nodes.add(new ProcessingInstruction(token.target, token.data)
-      ..span = token.span);
+        ..lineNumber = token.lineNumber
+        ..span = token.span);
   }
 
   /** Create an element but don't insert it anywhere */
@@ -258,6 +262,7 @@ class TreeBuilder {
     var namespace = token.namespace;
     if (namespace == null) namespace = defaultNamespace;
     var element = new Element(name, namespace)
+        ..lineNumber = token.lineNumber
         ..attributes = token.data
         ..span = token.span;
     return element;
@@ -273,6 +278,7 @@ class TreeBuilder {
     var namespace = token.namespace;
     if (namespace == null) namespace = defaultNamespace;
     var element = new Element(name, namespace)
+        ..lineNumber = token.lineNumber
         ..attributes = token.data
         ..span = token.span;
     openElements.last.nodes.add(element);

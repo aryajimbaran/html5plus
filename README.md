@@ -27,6 +27,7 @@ On the other hand, htm5lib and many browsers will interpret it as follows:
     </div>
 
 * Support processing instructions (a pull request was sent to html5lib).
+* Support the line number information (Node.lineNumber). Notice that it is not available in Text node and it broke the compatibility with `dart:html`.
 
 Installation
 ------------

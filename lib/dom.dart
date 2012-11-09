@@ -101,6 +101,12 @@ abstract class Node {
    */
   SourceSpan span;
 
+  /** The line number, or null if not available.
+   * Notice that it is not part `dart:html` API. If you use it, it is harder to
+   * ported to browser's native XML parser.
+   */
+  int lineNumber;
+
   Node(this.tagName) {
     nodes._parent = this;
   }

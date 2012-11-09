@@ -455,7 +455,7 @@ class HtmlTokenizer implements Iterator<Token> {
     } else if (data == "/") {
       state = closeTagOpenState;
     } else if (isLetter(data)) {
-      currentToken = new StartTagToken(data);
+      currentToken = new StartTagToken(data)..lineNumber = stream.lineNumber;
       state = tagNameState;
     } else if (data == ">") {
       // XXX In theory it could be something besides a tag name. But
@@ -465,7 +465,7 @@ class HtmlTokenizer implements Iterator<Token> {
       _addToken(new CharactersToken("<>"));
       state = dataState;
     } else if (data == "?") { //processing instruction
-      currentToken = new ProcessingInstructionToken(correct: true);
+      currentToken = new ProcessingInstructionToken(correct: true)..lineNumber = stream.lineNumber;
       state = processingInstructionState;
     } else {
       // XXX
@@ -1205,7 +1205,7 @@ class HtmlTokenizer implements Iterator<Token> {
     // and emit it.
     var data = stream.charsUntil(">");
     data = data.replaceAll("\u0000", "\uFFFD");
-    _addToken(new CommentToken(data));
+    _addToken(new CommentToken(data)..lineNumber = stream.lineNumber);
 
     // Eat the character directly after the bogus comment which is either a
     // ">" or an EOF.
@@ -1219,7 +1219,7 @@ class HtmlTokenizer implements Iterator<Token> {
     if (charStack.last == "-") {
       charStack.add(stream.char());
       if (charStack.last == "-") {
-        currentToken = new CommentToken("");
+        currentToken = new CommentToken("")..lineNumber = stream.lineNumber;
         state = commentStartState;
         return true;
       }
@@ -1234,7 +1234,7 @@ class HtmlTokenizer implements Iterator<Token> {
         }
       }
       if (matched) {
-        currentToken = new DoctypeToken(correct: true);
+        currentToken = new DoctypeToken(correct: true)..lineNumber = stream.lineNumber;
         state = doctypeState;
         return true;
       }
