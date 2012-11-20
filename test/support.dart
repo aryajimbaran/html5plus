@@ -47,7 +47,7 @@ class TestData implements Iterable<Map> {
 
   TestData(String filename, [this.newTestHeading = "data"])
       // Note: can't use readAsLinesSync here because it splits on \r
-      : _text = new File(filename).readAsTextSync();
+      : _text = new File(filename).readAsStringSync();
 
   // Note: in Python this was a generator, but since we can't do that in Dart,
   // it's easier to convert it into an upfront computation.

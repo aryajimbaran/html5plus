@@ -16,7 +16,6 @@
 library parser;
 
 import 'dart:math';
-import 'package:logging/logging.dart';
 import 'src/treebuilder.dart';
 import 'src/constants.dart';
 import 'src/encoding_parser.dart';
@@ -589,7 +588,7 @@ class Phase {
   Phase(HtmlParser parser) : parser = parser, tree = parser.tree;
 
   bool processEOF() {
-    throw const NotImplementedException();
+    throw new UnimplementedError();
   }
 
   Token processComment(CommentToken token) {
@@ -615,7 +614,7 @@ class Phase {
   }
 
   Token processStartTag(StartTagToken token) {
-    throw const NotImplementedException();
+    throw new UnimplementedError();
   }
 
   Token startTagHtml(StartTagToken token) {
@@ -631,7 +630,7 @@ class Phase {
   }
 
   Token processEndTag(EndTagToken token) {
-    throw const NotImplementedException();
+    throw new UnimplementedError();
   }
 
   /** Helper method for popping openElements. */
@@ -1264,7 +1263,7 @@ class InBodyPhase extends Phase {
         case "html":
           continue;
       }
-      parser.parseError(node.span, "expected-closing-tag-but-got-eof");
+      parser.parseError(node.sourceSpan, "expected-closing-tag-but-got-eof");
       break;
     }
     //Stop parsing
@@ -1607,7 +1606,7 @@ class InBodyPhase extends Phase {
       tree.generateImpliedEndTags();
       var last = tree.openElements.last;
       if (last.tagName != "ruby") {
-        parser.parseError(last.span, 'undefined-error');
+        parser.parseError(last.sourceSpan, 'undefined-error');
       }
     }
     tree.insertElement(token);
@@ -1976,7 +1975,7 @@ class TextPhase extends Phase {
 
   bool processEOF() {
     var last = tree.openElements.last;
-    parser.parseError(last.span, "expected-named-closing-tag-but-got-eof",
+    parser.parseError(last.sourceSpan, "expected-named-closing-tag-but-got-eof",
         {'name': last.tagName});
     tree.openElements.removeLast();
     parser.phase = parser.originalPhase;
@@ -2043,7 +2042,7 @@ class InTablePhase extends Phase {
   bool processEOF() {
     var last = tree.openElements.last;
     if (last.tagName != "html") {
-      parser.parseError(last.span, "eof-in-table");
+      parser.parseError(last.sourceSpan, "eof-in-table");
     } else {
       assert(parser.innerHTMLMode);
     }
@@ -2562,7 +2561,8 @@ class InRowPhase extends Phase {
       var last = tree.openElements.last;
       if (last.tagName == "tr" || last.tagName == "html") break;
 
-      parser.parseError(last.span, "unexpected-implied-end-tag-in-table-row",
+      parser.parseError(last.sourceSpan,
+          "unexpected-implied-end-tag-in-table-row",
           {"name": tree.openElements.last.tagName});
       tree.openElements.removeLast();
     }
@@ -2770,7 +2770,7 @@ class InSelectPhase extends Phase {
   bool processEOF() {
     var last = tree.openElements.last;
     if (last.tagName != "html") {
-      parser.parseError(last.span, "eof-in-select");
+      parser.parseError(last.sourceSpan, "eof-in-select");
     } else {
       assert(parser.innerHTMLMode);
     }
@@ -3149,7 +3149,7 @@ class InFramesetPhase extends Phase {
   bool processEOF() {
     var last = tree.openElements.last;
     if (last.tagName != "html") {
-      parser.parseError(last.span, "eof-in-frameset");
+      parser.parseError(last.sourceSpan, "eof-in-frameset");
     } else {
       assert(parser.innerHTMLMode);
     }

@@ -185,7 +185,7 @@ class TreeBuilder {
           entry.tagName,
           namespace: entry.namespace,
           data: new LinkedHashMap.from(entry.attributes))
-          ..span = entry.span;
+          ..span = entry.sourceSpan;
 
       // Step 9
       var element = insertElement(cloneToken);
@@ -210,7 +210,7 @@ class TreeBuilder {
   /**
    * Check if an element exists between the end of the active
    * formatting elements and the last marker. If it does, return it, else
-   * return null
+   * return null.
    */
   Node elementInActiveFormattingElements(String name) {
     for (Node item in reversed(activeFormattingElements)) {
@@ -234,7 +234,7 @@ class TreeBuilder {
   void insertDoctype(DoctypeToken token) {
     var doctype = new DocumentType(token.name, token.publicId, token.systemId)
         ..lineNumber = token.lineNumber
-        ..span = token.span;
+        ..sourceSpan = token.span;
     document.nodes.add(doctype);
   }
 
@@ -242,18 +242,7 @@ class TreeBuilder {
     if (parent == null) {
       parent = openElements.last;
     }
-    parent.nodes.add(new Comment(token.data)
-        ..lineNumber = token.lineNumber
-        ..span = token.span);
-  }
-
-  void insertProcessingInstruction(ProcessingInstructionToken token, [Node parent]) {
-    if (parent == null) {
-      parent = openElements.last;
-    }
-    parent.nodes.add(new ProcessingInstruction(token.target, token.data)
-        ..lineNumber = token.lineNumber
-        ..span = token.span);
+    parent.nodes.add(new Comment(token.data)..lineNumber = token.lineNumber..sourceSpan = token.span);
   }
 
   /** Create an element but don't insert it anywhere */
@@ -264,8 +253,17 @@ class TreeBuilder {
     var element = new Element(name, namespace)
         ..lineNumber = token.lineNumber
         ..attributes = token.data
-        ..span = token.span;
+        ..sourceSpan = token.span;
     return element;
+  }
+
+  void insertProcessingInstruction(ProcessingInstructionToken token, [Node parent]) {
+    if (parent == null) {
+      parent = openElements.last;
+    }
+    parent.nodes.add(new ProcessingInstruction(token.target, token.data)
+        ..lineNumber = token.lineNumber
+        ..sourceSpan = token.span);
   }
 
   Element insertElement(StartTagToken token) {
@@ -280,7 +278,7 @@ class TreeBuilder {
     var element = new Element(name, namespace)
         ..lineNumber = token.lineNumber
         ..attributes = token.data
-        ..span = token.span;
+        ..sourceSpan = token.span;
     openElements.last.nodes.add(element);
     openElements.add(element);
     return element;
@@ -335,7 +333,7 @@ class TreeBuilder {
         Text last = nodes.last;
         last.text = '${last.text}$data';
       } else {
-        nodes.add(new Text(data)..span = span);
+        nodes.add(new Text(data)..sourceSpan = span);
       }
     } else {
       int index = nodes.indexOf(refNode);
@@ -343,7 +341,7 @@ class TreeBuilder {
         Text last = nodes[index - 1];
         last.text = '${last.text}$data';
       } else {
-        nodes.insertAt(index, new Text(data)..span = span);
+        nodes.insertAt(index, new Text(data)..sourceSpan = span);
       }
     }
   }

@@ -4,17 +4,16 @@
  */
 library dom;
 
+import 'package:meta/meta.dart';
 import 'src/constants.dart';
 import 'src/list_proxy.dart';
 import 'src/treebuilder.dart';
 import 'src/utils.dart';
 import 'dom_parsing.dart';
+import 'parser.dart';
 
-// For doc comment only:
-import 'parser.dart' show HtmlParser;
-
-// TODO(jmesserly): I added this class to replace the tuple usage in Python.
-// How does this fit in to dart:html?
+// TODO(jmesserly): this needs to be replaced by an AttributeMap for attributes
+// that exposes namespace info.
 class AttributeName implements Comparable {
   /** The namespace prefix, e.g. `xlink`. */
   final String prefix;
@@ -82,6 +81,7 @@ abstract class Node {
   /** The parent of the current node (or null for the document node). */
   Node parent;
 
+  // TODO(jmesserly): should move to Element.
   /**
    * A map holding name, value pairs for attributes of the node.
    *
@@ -96,10 +96,12 @@ abstract class Node {
    */
   final NodeList nodes = new NodeList._();
 
-  /**
-   * The source span of this node, if it was created by the [HtmlParser].
-   */
-  SourceSpan span;
+  List<Element> _elements;
+
+  // TODO(jmesserly): consider using an Expando for this, and put it in
+  // dom_parsing. Need to check the performance affect.
+  /** The source span of this node, if it was created by the [HtmlParser]. */
+  SourceSpan sourceSpan;
 
   /** The line number, or null if not available.
    * Notice that it is not part `dart:html` API. If you use it, it is harder to
@@ -111,6 +113,14 @@ abstract class Node {
     nodes._parent = this;
   }
 
+  List<Element> get elements {
+    if (_elements == null) {
+      _elements = new FilteredElementList(this);
+    }
+    return _elements;
+  }
+
+  // TODO(jmesserly): needs to support deep clone.
   /**
    * Return a shallow copy of the current node i.e. a node with the same
    * name and attributes but with no parent or child nodes.
@@ -120,6 +130,14 @@ abstract class Node {
   String get id {
     var result = attributes['id'];
     return result != null ? result : '';
+  }
+
+  set id(String value) {
+    if (value == null) {
+      attributes.remove('id');
+    } else {
+      attributes['id'] = value;
+    }
   }
 
   String get namespace => null;
@@ -136,6 +154,13 @@ abstract class Node {
   String get outerHTML => _addOuterHtml(new StringBuffer()).toString();
 
   String get innerHTML => _addInnerHtml(new StringBuffer()).toString();
+
+  set innerHTML(String value) {
+    nodes.clear();
+    // TODO(jmesserly): should be able to get the same effect by adding the
+    // fragment directly.
+    nodes.addAll(parseFragment(value, container: tagName).nodes);
+  }
 
   StringBuffer _addOuterHtml(StringBuffer str);
 
@@ -157,10 +182,24 @@ abstract class Node {
   /**
    * Insert [node] as a child of the current node, before [refNode] in the
    * list of child nodes. Raises [UnsupportedOperationException] if [refNode]
-   * is not a child of the current node.
+   * is not a child of the current node. If refNode is null, this adds to the
+   * end of the list.
    */
   void insertBefore(Node node, Node refNode) {
-    nodes.insertAt(nodes.indexOf(refNode), node);
+    if (refNode == null) {
+      nodes.add(node);
+    } else {
+      nodes.insertAt(nodes.indexOf(refNode), node);
+    }
+  }
+
+  /** Replaces this node with another node. */
+  Node replaceWith(Node otherNode) {
+    if (parent == null) {
+      throw new UnsupportedError('Node must have a parent to replace it.');
+    }
+    parent.nodes[parent.nodes.indexOf(this)] = otherNode;
+    return this;
   }
 
   // TODO(jmesserly): should this be a property or remove?
@@ -203,14 +242,14 @@ abstract class Node {
   String _typeSelector(String selectors) {
     selectors = selectors.trim();
     if (!_isTypeSelector(selectors)) {
-      throw new NotImplementedException('only type selectors are implemented');
+      throw new UnimplementedError('only type selectors are implemented');
     }
     return selectors;
   }
 
   /**
    * Checks if this is a type selector.
-   * See <ttp://www.w3.org/TR/CSS2/grammar.html>.
+   * See <http://www.w3.org/TR/CSS2/grammar.html>.
    * Note: this doesn't support '*', the universal selector, non-ascii chars or
    * escape chars.
    */
@@ -271,6 +310,7 @@ abstract class Node {
 
 class Document extends Node {
   Document() : super(null);
+  factory Document.html(String html) => parse(html);
 
   int get nodeType => Node.DOCUMENT_NODE;
 
@@ -286,6 +326,9 @@ class Document extends Node {
 }
 
 class DocumentFragment extends Document {
+  DocumentFragment();
+  factory DocumentFragment.html(String html) => parseFragment(html);
+
   int get nodeType => Node.DOCUMENT_FRAGMENT_NODE;
 
   String toString() => "#document-fragment";
@@ -344,7 +387,64 @@ class Text extends Node {
 class Element extends Node {
   final String namespace;
 
+  // TODO(jmesserly): deprecate in favor of Element.tag? Or rename?
   Element(String name, [this.namespace]) : super(name);
+
+  Element.tag(String name) : namespace = null, super(name);
+
+  static final _START_TAG_REGEXP = new RegExp('<(\\w+)');
+
+  static final _CUSTOM_PARENT_TAG_MAP = const {
+    'body': 'html',
+    'head': 'html',
+    'caption': 'table',
+    'td': 'tr',
+    'colgroup': 'table',
+    'col': 'colgroup',
+    'tr': 'tbody',
+    'tbody': 'table',
+    'tfoot': 'table',
+    'thead': 'table',
+    'track': 'audio',
+  };
+
+  // TODO(jmesserly): this is from dart:html _ElementFactoryProvider...
+  // TODO(jmesserly): have a look at fixing some things in dart:html, in
+  // particular: is the parent tag map complete? Is it faster without regexp?
+  // TODO(jmesserly): for our version we can do something smarter in the parser.
+  // All we really need is to set the correct parse state.
+  factory Element.html(String html) {
+
+    // TODO(jacobr): this method can be made more robust and performant.
+    // 1) Cache the dummy parent elements required to use innerHTML rather than
+    //    creating them every call.
+    // 2) Verify that the html does not contain leading or trailing text nodes.
+    // 3) Verify that the html does not contain both <head> and <body> tags.
+    // 4) Detatch the created element from its dummy parent.
+    String parentTag = 'div';
+    String tag;
+    final match = _START_TAG_REGEXP.firstMatch(html);
+    if (match != null) {
+      tag = match.group(1).toLowerCase();
+      if (_CUSTOM_PARENT_TAG_MAP.containsKey(tag)) {
+        parentTag = _CUSTOM_PARENT_TAG_MAP[tag];
+      }
+    }
+
+    var fragment = parseFragment(html, container: parentTag);
+    Element element;
+    if (fragment.elements.length == 1) {
+      element = fragment.elements[0];
+    } else if (parentTag == 'html' && fragment.elements.length == 2) {
+      // You'll always get a head and a body when starting from html.
+      element = fragment.elements[tag == 'head' ? 0 : 1];
+    } else {
+      throw new ArgumentError('HTML had ${fragment.elements.length} '
+          'top level elements but 1 expected');
+    }
+    element.remove();
+    return element;
+  }
 
   int get nodeType => Node.ELEMENT_NODE;
 
@@ -411,6 +511,16 @@ class Comment extends Node {
   StringBuffer _addOuterHtml(StringBuffer str) => str.add("<!--$data-->");
 
   Comment clone() => new Comment(data);
+}
+
+class ProcessingInstruction extends Node {
+  final String target;
+  String data;
+
+  ProcessingInstruction(String target, [String this.data=""])
+  : super(target), this.target = target;
+
+  String toString() => "<?$target $data?>";
 }
 
 // TODO(jmesserly): is there any way to share code with the _NodeListImpl?
@@ -497,12 +607,101 @@ class NodeList extends ListProxy<Node> {
   }
 }
 
-class ProcessingInstruction extends Node {
-  final String target;
-  String data;
+// TODO(jmesserly): this was copied from dart:html
+// I fixed this to extend Collection and implement removeAt and first.
+class FilteredElementList extends Collection<Element> implements List<Element> {
+  final Node _node;
+  final List<Node> _childNodes;
 
-  ProcessingInstruction(String target, [String this.data=""])
-  : super(target), this.target = target;
+  FilteredElementList(Node node): _childNodes = node.nodes, _node = node;
 
-  String toString() => "<?$target $data?>";
+  // We can't memoize this, since it's possible that children will be messed
+  // with externally to this class.
+  List<Element> get _filtered => _childNodes.filter((n) => n is Element);
+
+  void forEach(void f(Element element)) => _filtered.forEach(f);
+
+  void operator []=(int index, Element value) {
+    this[index].replaceWith(value);
+  }
+
+  void set length(int newLength) {
+    final len = this.length;
+    if (newLength >= len) {
+      return;
+    } else if (newLength < 0) {
+      throw new ArgumentError("Invalid list length");
+    }
+
+    removeRange(newLength - 1, len - newLength);
+  }
+
+  void add(Element value) {
+    _childNodes.add(value);
+  }
+
+  void addAll(Collection<Element> collection) {
+    collection.forEach(add);
+  }
+
+  void addLast(Element value) {
+    add(value);
+  }
+
+  bool contains(Element element) {
+    return element is Element && _childNodes.contains(element);
+  }
+
+  void sort([Comparator compare = Comparable.compare]) {
+    // TODO(jacobr): should we impl?
+    throw new UnimplementedError();
+  }
+
+  void setRange(int start, int rangeLength, List from, [int startFrom = 0]) {
+    throw new UnimplementedError();
+  }
+
+  void removeRange(int start, int rangeLength) {
+    _filtered.getRange(start, rangeLength).forEach((el) => el.remove());
+  }
+
+  void insertRange(int start, int rangeLength, [initialValue = null]) {
+    throw new UnimplementedError();
+  }
+
+  void clear() {
+    // Currently, ElementList#clear clears even non-element nodes, so we follow
+    // that behavior.
+    _childNodes.clear();
+  }
+
+  Element removeLast() {
+    final result = this.last;
+    if (result != null) {
+      result.remove();
+    }
+    return result;
+  }
+
+  Element removeAt(int index) => this[index]..remove();
+
+  Collection map(f(Element element)) => _filtered.map(f);
+  Collection<Element> filter(bool f(Element element)) => _filtered.filter(f);
+  //bool some(bool f(Element element)) => _filtered.some(f);
+  int get length => _filtered.length;
+  Element operator [](int index) => _filtered[index];
+  Iterator<Element> iterator() => _filtered.iterator();
+  List<Element> getRange(int start, int rangeLength) =>
+    _filtered.getRange(start, rangeLength);
+  int indexOf(Element element, [int start = 0]) =>
+    _filtered.indexOf(element, start);
+
+  int lastIndexOf(Element element, [int start]) {
+    if (start == null) start = length - 1;
+    return _filtered.lastIndexOf(element, start);
+  }
+
+  Element get last => _filtered.last;
+
+  Element get first => _filtered.first;
 }

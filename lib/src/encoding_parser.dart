@@ -25,7 +25,7 @@ class EncodingBytes implements Iterable<String> {
     if (p >= length) {
       throw new StateError("No more elements");
     } else if (p < 0) {
-      throw new IndexOutOfRangeException(p);
+      throw new RangeError(p);
     }
     return _bytes[p];
   }
@@ -35,7 +35,7 @@ class EncodingBytes implements Iterable<String> {
     if (p >= length) {
       throw new StateError("No more elements");
     } else if (p < 0) {
-      throw new IndexOutOfRangeException(p);
+      throw new RangeError(p);
     }
     _position = p = p - 1;
     return _bytes[p];

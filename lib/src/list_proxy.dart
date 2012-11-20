@@ -35,6 +35,8 @@ class ListProxy<E> implements List<E> {
 
   bool contains(E item) => _list.contains(item);
 
+  E get first => _list.first;
+
   // Implement every method from List ...
   Iterator<E> iterator() => _list.iterator();
   int get length => _list.length;

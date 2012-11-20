@@ -303,7 +303,7 @@ bool invalidUnicode(int c) {
  * string doesn't correspond to a valid encoding.
  */
 String codecName(String encoding) {
-  final asciiPunctuation = const RegExp(
+  final asciiPunctuation = new RegExp(
       "[\u0009-\u000D\u0020-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E]");
 
   if (encoding == null) return null;

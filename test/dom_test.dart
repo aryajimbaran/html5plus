@@ -27,12 +27,12 @@ main() {
 
     test('123 - invalid', () {
       var doc = parse('<123>');
-      expect(() => doc.body.query('123'), throwsNotImplementedException);
+      expect(() => doc.body.query('123'), throwsUnimplementedError);
     });
 
     test('x\\ny - not implemented', () {
       var doc = parse('<x\\ny>');
-      expect(() => doc.body.query('x\\ny'), throwsNotImplementedException);
+      expect(() => doc.body.query('x\\ny'), throwsUnimplementedError);
     });
   });
 }

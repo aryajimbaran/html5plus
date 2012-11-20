@@ -163,7 +163,7 @@ void expectTokensMatch(List expectedTokens, List receivedTokens,
   }
 
   if (!ignoreErrorOrder && !ignoreErrors) {
-    expect(receivedTokens, equals(expectedTokens), message);
+    expect(receivedTokens, equals(expectedTokens), reason: message);
   } else {
     // Sort the tokens into two groups; non-parse errors and parse errors
     var expectedParseErrors = expectedTokens.filter((t) => t == "ParseError");
@@ -232,7 +232,7 @@ Map unescape(Map testInfo) {
 String camelCase(String s) {
   s = s.toLowerCase();
   var result = new StringBuffer();
-  for (var match in const RegExp(r"\W+(\w)(\w+)").allMatches(s)) {
+  for (var match in new RegExp(r"\W+(\w)(\w+)").allMatches(s)) {
     if (result.length == 0) result.add(s.substring(0, match.start));
     result.add(match.group(1).toUpperCase());
     result.add(match.group(2));
@@ -245,7 +245,7 @@ void main() {
   getDataFiles('tokenizer', (p) => p.endsWith('.test')).then((files) {
     for (var path in files) {
 
-      var text = new File(path).readAsTextSync();
+      var text = new File(path).readAsStringSync();
       var tests = JSON.parse(text);
       var testName = new Path.fromNative(path).filename.replaceAll(".test","");
       var testList = tests['tests'];
