@@ -2,8 +2,7 @@ name: html5plus
 author: "Dart Team <misc@dartlang.org>, Tom Yeh <tomyeh@rikulo.org>"
 homepage: https://github.com/tomyeh/html5plus
 description: A library for working with HTML and XML documents.
-version: 0.2.1
+version: 0.2.1+1
 dependencies:
-  args: { sdk: args }
-  meta: { sdk: meta }
-  unittest: { sdk: unittest }
+  meta: any
+  unittest: any
