@@ -1,7 +1,9 @@
 name: html5plus
-author: "Dart Team <misc@dartlang.org>, Tom Yeh <tomyeh@rikulo.org>"
+author:
+- Dart Team <misc@dartlang.org>
+- Tom Yeh <tomyeh@rikulo.org>
 homepage: https://github.com/tomyeh/html5plus
-description: A library for working with HTML and XML documents.
+description: A fork of html5lib for working with HTML and XML documents.
 version: 0.2.2
 dependencies:
   meta: any
