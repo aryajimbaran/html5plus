@@ -184,7 +184,7 @@ class EncodingParser {
     while (true) {
       // Try to find the next attribute after the current position
       var attr = getAttribute();
-      if (attr === null) return true;
+      if (attr == null) return true;
 
       if (attr[0] == "charset") {
         var tentativeEncoding = attr[1];
@@ -306,7 +306,7 @@ class EncodingParser {
       }
     } else if (c == ">") {
       return [joinStr(attrName), ""];
-    } else if (c === null) {
+    } else if (c == null) {
       return null;
     } else if (isLetter(c)) {
       attrValue.add(c.toLowerCase());
@@ -318,7 +318,7 @@ class EncodingParser {
       c = data.next();
       if (isSpaceOrAngleBracket(c)) {
         return [joinStr(attrName), joinStr(attrValue)];
-      } else if (c === null) {
+      } else if (c == null) {
         return null;
       } else if (isLetter(c)) {
         attrValue.add(c.toLowerCase());

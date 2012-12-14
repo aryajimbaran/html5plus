@@ -667,7 +667,7 @@ class InitialPhase extends Phase {
       parser.parseError(token.span, "unknown-doctype");
     }
 
-    if (publicId === null) {
+    if (publicId == null) {
       publicId = "";
     }
 
@@ -1240,7 +1240,7 @@ class InBodyPhase extends Phase {
 
     var matchingElements = [];
     for (Node node in reversed(tree.activeFormattingElements)) {
-      if (node === Marker) {
+      if (node == Marker) {
         break;
       } else if (isMatchingFormattingElement(node, element)) {
         matchingElements.add(node);
@@ -1720,7 +1720,7 @@ class InBodyPhase extends Phase {
   void endTagForm(EndTagToken token) {
     var node = tree.formPointer;
     tree.formPointer = null;
-    if (node === null || !tree.elementInScope(node)) {
+    if (node == null || !tree.elementInScope(node)) {
       parser.parseError(token.span, "unexpected-end-tag", {"name": "form"});
     } else {
       tree.generateImpliedEndTags();
@@ -1816,7 +1816,7 @@ class InBodyPhase extends Phase {
         }
       }
       // Step 3
-      if (furthestBlock === null) {
+      if (furthestBlock == null) {
         var element = tree.openElements.removeLast();
         while (element != formattingElement) {
           element = tree.openElements.removeLast();
@@ -2127,7 +2127,7 @@ class InTablePhase extends Phase {
 
   void startTagForm(StartTagToken token) {
     parser.parseError(token.span, "unexpected-form-in-table");
-    if (tree.formPointer === null) {
+    if (tree.formPointer == null) {
       tree.insertElement(token);
       tree.formPointer = tree.openElements.last;
       tree.openElements.removeLast();

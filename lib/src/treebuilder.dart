@@ -126,7 +126,7 @@ class TreeBuilder {
                                  const Pair(Namespaces.html, "option")];
           invert = true;
           break;
-        default: assert(false);
+        default: assert(false); break;
       }
     }
 

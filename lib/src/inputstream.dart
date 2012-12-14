@@ -152,12 +152,12 @@ class HtmlInputStream {
 
     // If there is no BOM need to look for meta elements with encoding
     // information
-    if (charEncodingName === null && parseMeta) {
+    if (charEncodingName == null && parseMeta) {
       charEncodingName = detectEncodingMeta();
       charEncodingCertain = false;
     }
     // If all else fails use the default encoding
-    if (charEncodingName === null) {
+    if (charEncodingName == null) {
       charEncodingCertain = false;
       charEncodingName = defaultEncoding;
     }
@@ -179,7 +179,7 @@ class HtmlInputStream {
     if (const ['utf-16', 'utf-16-be', 'utf-16-le'].contains(newEncoding)) {
       newEncoding = 'utf-8';
     }
-    if (newEncoding === null) {
+    if (newEncoding == null) {
       return;
     } else if (newEncoding == charEncodingName) {
       charEncodingCertain = true;
