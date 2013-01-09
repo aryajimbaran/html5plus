@@ -1846,7 +1846,7 @@ class HtmlTokenizer implements Iterator<Token> {
           "expected-processing-instruction-target-but-got-question-mark"));
       stream.unget(data);
       state = bogusCommentState;
-    } else if (data === EOF) {
+    } else if (data == EOF) {
       _addToken(new ParseErrorToken(
           "expected-processing-instruction-target-but-got-eof"));
       state = bogusCommentState;
@@ -1863,7 +1863,7 @@ class HtmlTokenizer implements Iterator<Token> {
       state = afterProcessingInstructionTargetState;
     } else if (data == "?") {
       state = processingInstructionEndState;
-    } else if (data === EOF) {
+    } else if (data == EOF) {
       _addToken(new ParseErrorToken(
           "expected-processing-instruction-target-but-got-eof"));
       currentProcessingInstructionToken.correct = false;
@@ -1882,7 +1882,7 @@ class HtmlTokenizer implements Iterator<Token> {
       return true;
     } else if (data == "?") {
       state = processingInstructionEndState;
-    } else if (data === EOF) {
+    } else if (data == EOF) {
       _addToken(new ParseErrorToken(
           "expected-processing-instruction-data-but-got-eof"));
       currentProcessingInstructionToken.correct = false;
@@ -1899,7 +1899,7 @@ class HtmlTokenizer implements Iterator<Token> {
     var data = stream.char();
     if (data == "?") {
       state = processingInstructionEndState;
-    } else if (data === EOF) {
+    } else if (data == EOF) {
       _addToken(new ParseErrorToken(
           "expected-processing-instruction-closing-tag-but-got-eof"));
       currentProcessingInstructionToken.correct = false;

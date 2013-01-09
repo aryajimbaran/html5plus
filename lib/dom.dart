@@ -530,6 +530,14 @@ class ProcessingInstruction extends Node {
   ProcessingInstruction(String target, [String this.data=""])
   : super(target), this.target = target;
 
+  int get nodeType => Node.PROCESSING_INSTRUCTION_NODE;
+
+  void _addOuterHtml(StringBuffer str) {
+    str.add("<?$target $data?>");
+  }
+
+  ProcessingInstruction clone() => new ProcessingInstruction(target, data);
+
   String toString() => "<?$target $data?>";
 }
 
