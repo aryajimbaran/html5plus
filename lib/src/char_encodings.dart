@@ -120,7 +120,7 @@ IterableWindows1252Decoder decodeWindows1252AsIterable(List<int> bytes,
  * provides an iterator on demand and the iterator will only translate bytes
  * as requested by the user of the iterator. (Note: results are not cached.)
  */
-class IterableWindows1252Decoder implements Iterable<int> {
+class IterableWindows1252Decoder extends Iterable<int> {
   final List<int> bytes;
   final int offset;
   final int length;
@@ -130,8 +130,8 @@ class IterableWindows1252Decoder implements Iterable<int> {
       int this.length = null,
       int this.replacementCodepoint = UNICODE_REPLACEMENT_CHARACTER_CODEPOINT]);
 
-  Windows1252Decoder iterator() => new Windows1252Decoder(bytes, offset, length,
-          replacementCodepoint);
+  Windows1252Decoder get iterator =>
+      new Windows1252Decoder(bytes, offset, length, replacementCodepoint);
 }
 
 
@@ -152,14 +152,15 @@ class Windows1252Decoder implements Iterator<int> {
   Windows1252Decoder(List<int> bytes, [int offset = 0, int length,
       this.replacementCodepoint = UNICODE_REPLACEMENT_CHARACTER_CODEPOINT])
       : _bytes = bytes,
-        _offset = offset,
+        _offset = offset - 1,
         _length = length == null ? bytes.length : length;
 
-  bool get hasNext => _offset < _length;
+  bool get _inRange => _offset >= 0 && _offset < _length;
+  int get current => _inRange ? _mapChar(_bytes[_offset]) : null;
 
-  int next() {
-    if (!hasNext) throw new StateError("No more elements");
-    return _mapChar(_bytes[_offset++]);
+  bool moveNext() {
+    _offset++;
+    return _inRange;
   }
 
   int _mapChar(int char) {

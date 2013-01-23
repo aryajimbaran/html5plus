@@ -1,8 +1,9 @@
 library parser_test;
 
 import 'dart:io';
+import 'dart:json' as json;
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
+import 'package:unittest/compact_vm_config.dart';
 import 'package:html5plus/dom.dart';
 import 'package:html5plus/parser.dart';
 import 'package:html5plus/src/constants.dart';
@@ -60,17 +61,17 @@ void runParserTest(String groupName, String innerHTML, String input,
         "\n\nInput:\n$input\n\nExpected errors (${errors.length}):\n"
         "${Strings.join(errors, '\n')}\n\n"
         "Actual errors (${parser.errors.length}):\n"
-        "${Strings.join(parser.errors.map((e) => '$e'), '\n')}");
+        "${parser.errors.mappedBy((e) => '$e').join('\n')}");
   }
 }
 
 
 void main() {
-  useVmConfiguration();
+  useCompactVMConfiguration();
   getDataFiles('tree-construction').then((files) {
     for (var path in files) {
       var tests = new TestData(path, "data");
-      var testName = new Path.fromNative(path).filename.replaceAll(".dat", "");
+      var testName = new Path(path).filename.replaceAll(".dat", "");
 
       group(testName, () {
         int index = 0;
@@ -85,7 +86,7 @@ void main() {
 
           for (var treeCtor in treeTypes.values) {
             for (var namespaceHTMLElements in const [false, true]) {
-              test(input, () {
+              test(_nameFor(input), () {
                 runParserTest(testName, innerHTML, input, expected, errors,
                     treeCtor, namespaceHTMLElements);
               });
@@ -97,4 +98,15 @@ void main() {
       });
     }
   });
+}
+
+/** Extract the name for the test based on the test input data. */
+_nameFor(String input) {
+  // Using json.parse to unescape other unicode characters
+  var escapeQuote = input
+      .replaceAll(new RegExp('\\\\.'), '_')
+      .replaceAll(new RegExp('\u0000'), '_')
+      .replaceAll('"', '\\"')
+      .replaceAll(new RegExp('[\n\r\t]'),'_');
+  return json.parse('"$escapeQuote"');
 }

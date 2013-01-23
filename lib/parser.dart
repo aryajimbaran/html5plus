@@ -306,8 +306,8 @@ class HtmlParser {
   }
 
   void mainLoop() {
-    while (tokenizer.hasNext) {
-      var token = normalizeToken(tokenizer.next());
+    while (tokenizer.moveNext()) {
+      var token = normalizeToken(tokenizer.current);
       var newToken = token;
       int type;
       while (newToken != null) {
@@ -471,7 +471,7 @@ class HtmlParser {
       "ychannelselector":"yChannelSelector",
       "zoomandpan":"zoomAndPan"
     };
-    for (var originalName in token.data.keys) {
+    for (var originalName in token.data.keys.toList()) {
       var svgName = replacements[originalName];
       if (svgName != null) {
         token.data[svgName] = token.data.remove(originalName);
@@ -499,7 +499,7 @@ class HtmlParser {
       "xmlns:xlink": const AttributeName("xmlns", "xlink", Namespaces.xmlns)
     };
 
-    for (var originalName in token.data.keys) {
+    for (var originalName in token.data.keys.toList()) {
       var foreignName = replacements[originalName];
       if (foreignName != null) {
         token.data[foreignName] = token.data.remove(originalName);
@@ -2188,7 +2188,7 @@ class InTableTextPhase extends Phase {
   void flushCharacters() {
     if (characterTokens.length == 0) return;
 
-    var data = joinStr(characterTokens.map((t) => t.data));
+    var data = characterTokens.mappedBy((t) => t.data).join();
     var span = null;
 
     if (parser.generateSpans) {

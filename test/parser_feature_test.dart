@@ -3,7 +3,7 @@ library parser_test;
 
 import 'dart:io';
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
+import 'package:unittest/compact_vm_config.dart';
 import 'package:html5plus/dom.dart';
 import 'package:html5plus/parser.dart';
 import 'package:html5plus/parser_console.dart' as parser_console;
@@ -14,7 +14,7 @@ import 'package:html5plus/src/treebuilder.dart';
 import 'support.dart';
 
 main() {
-  useVmConfiguration();
+  useCompactVMConfiguration();
 
   test('doctype is cloneable', () {
     var doc = parse('<!DOCTYPE HTML>');
@@ -165,7 +165,7 @@ ParseError:4:3: Unexpected DOCTYPE. Ignored.
               xlink:show="new"></desc>
       ''');
       var n = doc.query('desc');
-      var keys = n.attributes.keys;
+      var keys = n.attributes.keys.toList();
       expect(keys[0], new isInstanceOf<AttributeName>());
       expect(keys[0].prefix, equals('xlink'));
       expect(keys[0].namespace, equals('http://www.w3.org/1999/xlink'));

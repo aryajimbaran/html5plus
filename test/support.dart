@@ -1,6 +1,7 @@
 /** Support code for the tests in this directory. */
 library support;
 
+import 'dart:async';
 import 'dart:io';
 import 'package:html5plus/src/treebuilder.dart';
 import 'package:html5plus/dom.dart';
@@ -51,7 +52,7 @@ class TestData implements Iterable<Map> {
 
   // Note: in Python this was a generator, but since we can't do that in Dart,
   // it's easier to convert it into an upfront computation.
-  Iterator<Map> iterator() => _getData().iterator();
+  Iterator<Map> get iterator => _getData().iterator;
 
   List<Map> _getData() {
     var data = <String, String>{};

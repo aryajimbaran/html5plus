@@ -32,7 +32,7 @@ int parseIntRadix(String str, [int radix = 10]) {
   return val;
 }
 
-bool any(List<bool> iterable) => iterable.some((f) => f);
+bool any(List<bool> iterable) => iterable.any((f) => f);
 
 bool startsWithAny(String str, List<String> prefixes) {
   for (var prefix in prefixes) {
@@ -42,8 +42,6 @@ bool startsWithAny(String str, List<String> prefixes) {
   }
   return false;
 }
-
-String joinStr(List<String> strings) => Strings.join(strings, '');
 
 // Like the python [:] operator.
 List slice(List list, int start, [int end]) {
@@ -137,22 +135,21 @@ String formatStr(String format, Map data) {
 
 _ReverseIterable reversed(List list) => new _ReverseIterable(list);
 
-class _ReverseIterable implements Iterable, Iterator {
+class _ReverseIterable<E> extends Iterable<E> implements Iterator<E> {
   int _index;
-  List _list;
+  List<E> _list;
   _ReverseIterable(this._list);
-  Iterator iterator() {
+  Iterator<E> get iterator {
     if (_index == null) {
       _index = _list.length;
       return this;
     } else {
-      return new _ReverseIterable(_list).iterator();
+      return new _ReverseIterable(_list).iterator;
     }
   }
 
-  bool get hasNext => _index > 0;
-  next() {
-    if (_index == 0) throw new StateError("No more elements");
-    return _list[--_index];
-  }
+  E get current =>
+      (_index == _list.length || _index < 0) ? null : _list[_index];
+
+  bool moveNext() => --_index >= 0;
 }

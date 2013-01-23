@@ -1,12 +1,13 @@
 library tokenizer_test;
 
 // Note: mirrors used to match the getattr usage in the original test
+import 'dart:async';
 import 'dart:io';
-import 'dart:json';
+import 'dart:json' as json;
 import 'dart:mirrors';
 import 'dart:utf';
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
+import 'package:unittest/compact_vm_config.dart';
 import 'package:html5plus/src/char_encodings.dart';
 import 'package:html5plus/src/constants.dart' as constants;
 import 'package:html5plus/src/token.dart';
@@ -32,14 +33,15 @@ class TokenizerTestParser {
     // Note: we can't get a closure of the state method. However, we can
     // create a new closure to invoke it via mirrors.
     var mtok = reflect(tokenizer);
-    tokenizer.state = () => mtok.invoke(_state, const []).value.reflectee;
+    tokenizer.state =
+        () => deprecatedFutureValue(mtok.invoke(_state, const [])).reflectee;
 
     if (_lastStartTag != null) {
       tokenizer.currentToken = new StartTagToken(_lastStartTag);
     }
 
-    while (tokenizer.hasNext) {
-      var token = tokenizer.next();
+    while (tokenizer.moveNext()) {
+      var token = tokenizer.current;
       switch (token.kind) {
         case TokenKind.characters:
           processCharacters(token);
@@ -166,13 +168,13 @@ void expectTokensMatch(List expectedTokens, List receivedTokens,
     expect(receivedTokens, equals(expectedTokens), reason: message);
   } else {
     // Sort the tokens into two groups; non-parse errors and parse errors
-    var expectedParseErrors = expectedTokens.filter((t) => t == "ParseError");
-    var expectedNonErrors = expectedTokens.filter((t) => t != "ParseError");
-    var receivedParseErrors = receivedTokens.filter((t) => t == "ParseError");
-    var receivedNonErrors = receivedTokens.filter((t) => t != "ParseError");
+    var expectedNonErrors = expectedTokens.where((t) => t != "ParseError");
+    var receivedNonErrors = receivedTokens.where((t) => t != "ParseError");
 
     expect(receivedNonErrors, equals(expectedNonErrors), reason: message);
     if (!ignoreErrors) {
+      var expectedParseErrors = expectedTokens.where((t) => t == "ParseError");
+      var receivedParseErrors = receivedTokens.where((t) => t == "ParseError");
       expect(receivedParseErrors, equals(expectedParseErrors), reason: message);
     }
   }
@@ -198,7 +200,7 @@ void runTokenizerTest(Map testInfo) {
               testInfo['initialState'],
               "\nInput:", testInfo['input'],
               "\nExpected:", expected,
-              "\nreceived:", tokens].map((s) => '$s'), '\n');
+              "\nreceived:", tokens].mappedBy((s) => '$s'), '\n');
   var ignoreErrorOrder = testInfo['ignoreErrorOrder'];
   if (ignoreErrorOrder == null) ignoreErrorOrder = false;
 
@@ -206,8 +208,10 @@ void runTokenizerTest(Map testInfo) {
 }
 
 Map unescape(Map testInfo) {
-  // Note: using JSON.parse to unescape the unicode characters in the string.
-  decode(inp) => JSON.parse('"$inp"');
+  // TODO(sigmundch,jmesserly): we currently use json.parse to unescape the
+  // unicode characters in the string, we should use a decoding that works with
+  // any control characters.
+  decode(inp) => inp == '\u0000' ? inp : json.parse('"$inp"');
 
   testInfo["input"] = decode(testInfo["input"]);
   for (var token in testInfo["output"]) {
@@ -241,13 +245,13 @@ String camelCase(String s) {
 }
 
 void main() {
-  useVmConfiguration();
+  useCompactVMConfiguration();
   getDataFiles('tokenizer', (p) => p.endsWith('.test')).then((files) {
     for (var path in files) {
 
       var text = new File(path).readAsStringSync();
-      var tests = JSON.parse(text);
-      var testName = new Path.fromNative(path).filename.replaceAll(".test","");
+      var tests = json.parse(text);
+      var testName = new Path(path).filename.replaceAll(".test","");
       var testList = tests['tests'];
       if (testList == null) continue;
 

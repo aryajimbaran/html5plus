@@ -11,13 +11,14 @@ import 'utils.dart';
  * If the position is ever greater than the string length then an exception is
  * raised.
  */
-class EncodingBytes implements Iterable<String> {
+class EncodingBytes extends Iterable<String> {
   final String _bytes;
   int _position = -1;
 
   EncodingBytes(this._bytes);
 
-  Iterator<String> iterator() => _bytes.splitChars().iterator();
+  Iterator<String> get iterator => _bytes.splitChars().iterator;
+
   int get length => _bytes.length;
 
   String next() {
@@ -62,7 +63,7 @@ class EncodingBytes implements Iterable<String> {
   String get currentByte => _bytes[position];
 
   /** Skip past a list of characters. Defaults to skipping [isWhitespace]. */
-  String skip([CharPreciate skipChars]) {
+  String skipChars([CharPreciate skipChars]) {
     if (skipChars == null) skipChars = isWhitespace;
     var p = position;  // use property for the error-checking
     while (p < length) {
@@ -247,7 +248,7 @@ class EncodingParser {
    */
   List<String> getAttribute() {
     // Step 1 (skip chars)
-    var c = data.skip((x) => x == "/" || isWhitespace(x));
+    var c = data.skipChars((x) => x == "/" || isWhitespace(x));
     // Step 2
     if (c == ">" || c == null) {
       return null;
@@ -263,11 +264,11 @@ class EncodingParser {
         break;
       } else if (isWhitespace(c)) {
         // Step 6!
-        c = data.skip();
+        c = data.skipChars();
         c = data.next();
         break;
       } else if (c == "/" || c == ">") {
-        return [joinStr(attrName), ""];
+        return [attrName.join(), ""];
       } else if (isLetter(c)) {
         attrName.add(c.toLowerCase());
       } else {
@@ -279,12 +280,12 @@ class EncodingParser {
     // Step 7
     if (c != "=") {
       data.previous();
-      return [joinStr(attrName), ""];
+      return [attrName.join(), ""];
     }
     // Step 8
     data.next();
     // Step 9
-    c = data.skip();
+    c = data.skipChars();
     // Step 10
     if (c == "'" || c == '"') {
       // 10.1
@@ -295,7 +296,7 @@ class EncodingParser {
         if (c == quoteChar) {
           // 10.3
           data.next();
-          return [joinStr(attrName), joinStr(attrValue)];
+          return [attrName.join(), attrValue.join()];
         } else if (isLetter(c)) {
           // 10.4
           attrValue.add(c.toLowerCase());
@@ -305,7 +306,7 @@ class EncodingParser {
         }
       }
     } else if (c == ">") {
-      return [joinStr(attrName), ""];
+      return [attrName.join(), ""];
     } else if (c == null) {
       return null;
     } else if (isLetter(c)) {
@@ -317,7 +318,7 @@ class EncodingParser {
     while (true) {
       c = data.next();
       if (isSpaceOrAngleBracket(c)) {
-        return [joinStr(attrName), joinStr(attrValue)];
+        return [attrName.join(), attrValue.join()];
       } else if (c == null) {
         return null;
       } else if (isLetter(c)) {
@@ -341,13 +342,13 @@ class ContentAttrParser {
       // otherwise return
       data.jumpTo("charset");
       data.position += 1;
-      data.skip();
+      data.skipChars();
       if (data.currentByte != "=") {
         // If there is no = sign keep looking for attrs
         return null;
       }
       data.position += 1;
-      data.skip();
+      data.skipChars();
       // Look for an encoding between matching quote marks
       if (data.currentByte == '"' || data.currentByte == "'") {
         var quoteMark = data.currentByte;

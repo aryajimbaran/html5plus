@@ -3,12 +3,12 @@ library dom_test;
 
 import 'dart:io';
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
+import 'package:unittest/compact_vm_config.dart';
 import 'package:html5plus/parser.dart';
 import 'package:html5plus/dom.dart';
 
 main() {
-  useVmConfiguration();
+  useCompactVMConfiguration();
 
   group('Node.query type selectors', () {
     test('x-foo', () {

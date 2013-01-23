@@ -77,16 +77,8 @@ class HtmlTokenizer implements Iterator<Token> {
   DoctypeToken get currentDoctypeToken => currentToken;
   ProcessingInstructionToken get currentProcessingInstructionToken => currentToken;
 
-  bool get hasNext {
-    if (stream.errors.length > 0) return true;
-    if (tokenQueue.length > 0) return true;
-    // Start processing. When EOF is reached state will return false;
-    // instead of true and the loop will terminate.
-    do {
-      if (!state()) return false;
-    } while (stream.errors.length == 0 && tokenQueue.length == 0);
-    return true;
-  }
+  Token _current;
+  Token get current => _current;
 
   /**
    * This is where the magic happens.
@@ -95,15 +87,22 @@ class HtmlTokenizer implements Iterator<Token> {
    * to return we yield the token which pauses processing until the next token
    * is requested.
    */
-   Token next() {
-    if (hasNext) {
-      if (stream.errors.length > 0) {
-        return new ParseErrorToken(stream.errors.removeFirst());
+  bool moveNext() {
+    // Start processing. When EOF is reached state will return false;
+    // instead of true and the loop will terminate.
+    while (stream.errors.length == 0 && tokenQueue.length == 0) {
+      if (!state()) {
+        _current = null;
+        return false;
       }
-      return tokenQueue.removeFirst();
-    } else {
-      throw new StateError("No more elements");
     }
+    if (stream.errors.length > 0) {
+      _current = new ParseErrorToken(stream.errors.removeFirst());
+    } else {
+      assert (tokenQueue.length > 0);
+      _current = tokenQueue.removeFirst();
+    }
+    return true;
   }
 
   /**
@@ -154,7 +153,7 @@ class HtmlTokenizer implements Iterator<Token> {
     }
 
     // Convert the set of characters consumed to an int.
-    var charAsInt = parseIntRadix(joinStr(charStack), radix);
+    var charAsInt = parseIntRadix(charStack.join(), radix);
 
     // Certain characters get replaced with others
     var char = replacementCharacters[charAsInt];
@@ -227,7 +226,7 @@ class HtmlTokenizer implements Iterator<Token> {
         // No digits found
         _addToken(new ParseErrorToken("expected-numeric-entity"));
         stream.unget(charStack.removeLast());
-        output = "&${joinStr(charStack)}";
+        output = "&${charStack.join()}";
       }
     } else {
       // At this point in the process might have named entity. Entities
@@ -239,9 +238,9 @@ class HtmlTokenizer implements Iterator<Token> {
       if (filteredEntityList == null) filteredEntityList = const [];
 
       while (charStack.last != EOF) {
-        var name = joinStr(charStack);
-        filteredEntityList = filteredEntityList.filter(
-            (e) => e.startsWith(name));
+        var name = charStack.join();
+        filteredEntityList = filteredEntityList.where(
+            (e) => e.startsWith(name)).toList();
 
         if (filteredEntityList.length == 0) {
           break;
@@ -258,7 +257,7 @@ class HtmlTokenizer implements Iterator<Token> {
 
       int entityLen;
       for (entityLen = charStack.length - 1; entityLen > 1; entityLen--) {
-        var possibleEntityName = joinStr(charStack.getRange(0, entityLen));
+        var possibleEntityName = charStack.getRange(0, entityLen).join();
         if (entities.containsKey(possibleEntityName)) {
           entityName = possibleEntityName;
           break;
@@ -275,16 +274,16 @@ class HtmlTokenizer implements Iterator<Token> {
             (isLetterOrDigit(charStack[entityLen]) ||
              charStack[entityLen] == '=')) {
           stream.unget(charStack.removeLast());
-          output = "&${joinStr(charStack)}";
+          output = "&${charStack.join()}";
         } else {
           output = entities[entityName];
           stream.unget(charStack.removeLast());
-          output = '${output}${joinStr(slice(charStack, entityLen))}';
+          output = '${output}${slice(charStack, entityLen).join()}';
         }
       } else {
         _addToken(new ParseErrorToken("expected-named-entity"));
         stream.unget(charStack.removeLast());
-        output = "&${joinStr(charStack)}";
+        output = "&${charStack.join()}";
       }
     }
     if (fromAttribute) {
@@ -1831,7 +1830,7 @@ class HtmlTokenizer implements Iterator<Token> {
     }
 
     if (data.length > 0) {
-      _addToken(new CharactersToken(joinStr(data)));
+      _addToken(new CharactersToken(data.join()));
     }
     state = dataState;
     return true;
