@@ -4,7 +4,9 @@
  */
 library dom;
 
+import 'dart:collection';
 import 'package:meta/meta.dart';
+
 import 'src/constants.dart';
 import 'src/list_proxy.dart';
 import 'src/treebuilder.dart';
@@ -113,7 +115,7 @@ abstract class Node {
     nodes._parent = this;
   }
 
-  List<Element> get elements {
+  List<Element> get children {
     if (_elements == null) {
       _elements = new FilteredElementList(this);
     }
@@ -127,19 +129,6 @@ abstract class Node {
    */
   Node clone();
 
-  String get id {
-    var result = attributes['id'];
-    return result != null ? result : '';
-  }
-
-  set id(String value) {
-    if (value == null) {
-      attributes.remove('id');
-    } else {
-      attributes['id'] = value;
-    }
-  }
-
   String get namespace => null;
 
   // TODO(jmesserly): do we need this here?
@@ -151,19 +140,19 @@ abstract class Node {
 
   int get nodeType;
 
-  String get outerHTML {
+  String get outerHtml {
     var str = new StringBuffer();
     _addOuterHtml(str);
     return str.toString();
   }
 
-  String get innerHTML {
+  String get innerHtml {
     var str = new StringBuffer();
     _addInnerHtml(str);
     return str.toString();
   }
 
-  set innerHTML(String value) {
+  set innerHtml(String value) {
     nodes.clear();
     // TODO(jmesserly): should be able to get the same effect by adding the
     // fragment directly.
@@ -236,7 +225,7 @@ abstract class Node {
   Element query(String selectors) => _queryType(_typeSelector(selectors));
 
   /**
-   * Retursn all descendant nodes matching the given selectors, using a
+   * Returns all descendant nodes matching the given selectors, using a
    * preorder traversal. NOTE: right now, this supports only a single type
    * selectors, e.g. `node.queryAll('div')`.
    */
@@ -245,6 +234,10 @@ abstract class Node {
     _queryAllType(_typeSelector(selectors), results);
     return results;
   }
+
+  bool hasChildNodes() => !nodes.isEmpty;
+
+  bool contains(Node node) => nodes.contains(node);
 
   String _typeSelector(String selectors) {
     selectors = selectors.trim();
@@ -442,13 +435,13 @@ class Element extends Node {
 
     var fragment = parseFragment(html, container: parentTag);
     Element element;
-    if (fragment.elements.length == 1) {
-      element = fragment.elements[0];
-    } else if (parentTag == 'html' && fragment.elements.length == 2) {
+    if (fragment.children.length == 1) {
+      element = fragment.children[0];
+    } else if (parentTag == 'html' && fragment.children.length == 2) {
       // You'll always get a head and a body when starting from html.
-      element = fragment.elements[tag == 'head' ? 0 : 1];
+      element = fragment.children[tag == 'head' ? 0 : 1];
     } else {
-      throw new ArgumentError('HTML had ${fragment.elements.length} '
+      throw new ArgumentError('HTML had ${fragment.children.length} '
           'top level elements but 1 expected');
     }
     element.remove();
@@ -505,6 +498,19 @@ class Element extends Node {
 
   Element clone() => new Element(tagName, namespace)
       ..attributes = new LinkedHashMap.from(attributes);
+
+  String get id {
+    var result = attributes['id'];
+    return result != null ? result : '';
+  }
+
+  set id(String value) {
+    if (value == null) {
+      attributes.remove('id');
+    } else {
+      attributes['id'] = value;
+    }
+  }
 }
 
 class Comment extends Node {
@@ -565,18 +571,17 @@ class NodeList extends ListProxy<Node> {
 
   void addLast(Node value) => add(value);
 
-  void addAll(Collection<Node> collection) {
+  void addAll(Iterable<Node> collection) {
     // Note: we need to be careful if collection is another NodeList.
     // In particular:
     //   1. we need to copy the items before updating their parent pointers,
     //   2. we should update parent pointers in reverse order. That way they
     //      are removed from the original NodeList (if any) from the end, which
     //      is faster.
-    if (collection is NodeList) {
-      collection = new List<Node>.from(collection);
-    }
-    for (var node in reversed(collection)) _setParent(node);
-    super.addAll(collection);
+    var list = (collection is NodeList || collection is! List)
+        ? collection.toList() : collection as List;
+    for (var node in list.reversed) _setParent(node);
+    super.addAll(list);
   }
 
   Node removeLast() => super.removeLast()..parent = null;
@@ -657,10 +662,6 @@ class FilteredElementList extends Collection<Element> implements List<Element> {
     _childNodes.add(value);
   }
 
-  void remove(Element value) {
-    _childNodes.remove(value);
-  }
-
   void addAll(Iterable<Element> collection) {
     collection.forEach(add);
   }
@@ -672,6 +673,8 @@ class FilteredElementList extends Collection<Element> implements List<Element> {
   bool contains(Element element) {
     return element is Element && _childNodes.contains(element);
   }
+
+  List<Element> get reversed => _filtered.reversed;
 
   void sort([int compare(Element a, Element b)]) {
     // TODO(jacobr): should we impl?
@@ -702,6 +705,12 @@ class FilteredElementList extends Collection<Element> implements List<Element> {
       result.remove();
     }
     return result;
+  }
+
+  void remove(Element value) {
+    if (_childNodes.contains(value)) {
+      value.remove();
+    }
   }
 
   Element removeAt(int index) => this[index]..remove();

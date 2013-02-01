@@ -7,7 +7,6 @@ import 'dart:json' as json;
 import 'dart:mirrors';
 import 'dart:utf';
 import 'package:unittest/unittest.dart';
-import 'package:unittest/compact_vm_config.dart';
 import 'package:html5plus/src/char_encodings.dart';
 import 'package:html5plus/src/constants.dart' as constants;
 import 'package:html5plus/src/token.dart';
@@ -245,7 +244,6 @@ String camelCase(String s) {
 }
 
 void main() {
-  useCompactVMConfiguration();
   getDataFiles('tokenizer', (p) => p.endsWith('.test')).then((files) {
     for (var path in files) {
 

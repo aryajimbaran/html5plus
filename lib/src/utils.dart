@@ -1,6 +1,7 @@
 /** Misc things that were useful when porting the code from Python. */
 library utils;
 
+import 'dart:collection';
 import 'package:unittest/unittest.dart';
 import 'constants.dart';
 
@@ -131,25 +132,4 @@ String formatStr(String format, Map data) {
   });
 
   return format;
-}
-
-_ReverseIterable reversed(List list) => new _ReverseIterable(list);
-
-class _ReverseIterable<E> extends Iterable<E> implements Iterator<E> {
-  int _index;
-  List<E> _list;
-  _ReverseIterable(this._list);
-  Iterator<E> get iterator {
-    if (_index == null) {
-      _index = _list.length;
-      return this;
-    } else {
-      return new _ReverseIterable(_list).iterator;
-    }
-  }
-
-  E get current =>
-      (_index == _list.length || _index < 0) ? null : _list[_index];
-
-  bool moveNext() => --_index >= 0;
 }

@@ -42,7 +42,7 @@ Future<List<String>> getDataFiles(String subdirectory, [FileMatcher matcher]) {
 
 // TODO(jmesserly): make this class simpler. We could probably split on
 // "\n#" instead of newline and remove a lot of code.
-class TestData implements Iterable<Map> {
+class TestData extends Iterable<Map> {
   final String _text;
   final String newTestHeading;
 

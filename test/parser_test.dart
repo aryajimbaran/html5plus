@@ -3,7 +3,6 @@ library parser_test;
 import 'dart:io';
 import 'dart:json' as json;
 import 'package:unittest/unittest.dart';
-import 'package:unittest/compact_vm_config.dart';
 import 'package:html5plus/dom.dart';
 import 'package:html5plus/parser.dart';
 import 'package:html5plus/src/constants.dart';
@@ -67,7 +66,6 @@ void runParserTest(String groupName, String innerHTML, String input,
 
 
 void main() {
-  useCompactVMConfiguration();
   getDataFiles('tree-construction').then((files) {
     for (var path in files) {
       var tests = new TestData(path, "data");

@@ -72,4 +72,6 @@ class ListProxy<E> extends Collection<E> implements List<E> {
   void insertRange(int start, int length, [E initialValue]) {
     _list.insertRange(start, length, initialValue);
   }
+
+  List<E> get reversed => _list.reversed;
 }

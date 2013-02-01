@@ -1,5 +1,6 @@
 library inputstream;
 
+import 'dart:collection';
 import 'dart:utf';
 import '../dom_parsing.dart' show SourceFileInfo;
 import 'char_encodings.dart';

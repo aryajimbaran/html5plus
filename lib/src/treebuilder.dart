@@ -1,8 +1,9 @@
 /** Internals to the tree builders. */
 library treebuilder;
 
-import '../dom.dart';
-import '../dom_parsing.dart';
+import 'dart:collection';
+import 'package:html5plus/dom.dart';
+import 'package:html5plus/dom_parsing.dart';
 import 'constants.dart';
 import 'list_proxy.dart';
 import 'token.dart';
@@ -20,7 +21,7 @@ class ActiveFormattingElements extends ListProxy<Node> {
   void add(Node node) {
     int equalCount = 0;
     if (node != Marker) {
-      for (Node element in reversed(this)) {
+      for (Node element in reversed) {
         if (element == Marker) {
           break;
         }
@@ -130,7 +131,7 @@ class TreeBuilder {
       }
     }
 
-    for (Node node in reversed(openElements)) {
+    for (Node node in openElements.reversed) {
       if (node.tagName == target && !exactNode ||
           node == target && exactNode) {
         return true;
@@ -213,7 +214,7 @@ class TreeBuilder {
    * return null.
    */
   Node elementInActiveFormattingElements(String name) {
-    for (Node item in reversed(activeFormattingElements)) {
+    for (Node item in activeFormattingElements.reversed) {
       // Check for Marker first because if it's a Marker it doesn't have a
       // name attribute.
       if (item == Marker) {
@@ -357,7 +358,7 @@ class TreeBuilder {
     Node lastTable = null;
     Node fosterParent = null;
     var insertBefore = null;
-    for (Node elm in reversed(openElements)) {
+    for (Node elm in openElements.reversed) {
       if (elm.tagName == "table") {
         lastTable = elm;
         break;

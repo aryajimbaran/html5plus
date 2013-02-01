@@ -16,7 +16,4 @@ echo Analyzing library for warnings or type errors
 dart_analyzer --fatal-warnings --fatal-type-errors lib/*.dart
 popd
 
-for test in $DIR/*_test.dart; do
-  echo "Running test suite: $test"
-  dart --enable-type-checks --enable-asserts $test
-done
+dart --enable-type-checks --enable-asserts test/run_all.dart $@

@@ -3,13 +3,10 @@ library dom_test;
 
 import 'dart:io';
 import 'package:unittest/unittest.dart';
-import 'package:unittest/compact_vm_config.dart';
 import 'package:html5plus/parser.dart';
 import 'package:html5plus/dom.dart';
 
 main() {
-  useCompactVMConfiguration();
-
   group('Node.query type selectors', () {
     test('x-foo', () {
       expect(parse('<x-foo>').body.query('x-foo'), isNotNull);
@@ -17,7 +14,7 @@ main() {
 
     test('-x-foo', () {
       var doc = parse('<body><-x-foo>');
-      expect(doc.body.outerHTML, equals('<body>&lt;-x-foo&gt;</body>'));
+      expect(doc.body.outerHtml, equals('<body>&lt;-x-foo&gt;</body>'));
       expect(doc.body.query('-x-foo'), isNull);
     });
 
