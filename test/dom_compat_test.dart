@@ -21,14 +21,11 @@ main() {
 void _runDrt(String htmlFile) {
   final allPassedRegExp = new RegExp('All \\d+ tests passed');
 
-  Process.run('DumpRenderTree', [htmlFile])
+  final future = Process.run('DumpRenderTree', [htmlFile])
     .then((ProcessResult pr) {
       expect(pr.exitCode, 0);
       expect(pr.stdout, matches(allPassedRegExp));
-    }, onError: (AsyncError error) {
-      registerException(error.error, error.stackTrace);
-    })
-    .whenComplete(expectAsync0(() {
-      // intentionally empty
-    }));
+    });
+
+  expect(future, completion(isNull));
 }
