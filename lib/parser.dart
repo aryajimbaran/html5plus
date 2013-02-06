@@ -17,6 +17,7 @@ library parser;
 
 import 'dart:collection';
 import 'dart:math';
+import 'package:source_maps/span.dart' show Span, FileSpan;
 
 import 'src/treebuilder.dart';
 import 'src/constants.dart';
@@ -35,11 +36,15 @@ import 'dom_parsing.dart';
  * [encoding], which must be a string. If specified, that encoding will be used,
  * regardless of any BOM or later declaration (such as in a meta element).
  *
- * Set [generateSpans] if you want to generate [SourceSpan]s, otherwise the
- * [Node.span] property will be `null`.
+ * Set [generateSpans] if you want to generate [Span]s, otherwise the
+ * [Node.sourceSpan] property will be `null`. When using [generateSpans] you can
+ * additionally pass [sourceUrl] to indicate where the [input] was extracted
+ * from.
  */
-Document parse(doc, {String encoding, bool generateSpans: false}) {
-  var p = new HtmlParser(doc, encoding: encoding, generateSpans: generateSpans);
+Document parse(input, {String encoding, bool generateSpans: false,
+    String sourceUrl}) {
+  var p = new HtmlParser(input, encoding: encoding,
+      generateSpans: generateSpans, sourceUrl: sourceUrl);
   return p.parse();
 }
 
@@ -53,12 +58,15 @@ Document parse(doc, {String encoding, bool generateSpans: false}) {
  * [encoding], which must be a string. If specified, that encoding will be used,
  * regardless of any BOM or later declaration (such as in a meta element).
  *
- * Set [generateSpans] if you want to generate [SourceSpan]s, otherwise the
- * [Node.span] property will be `null`.
+ * Set [generateSpans] if you want to generate [Span]s, otherwise the
+ * [Node.sourceSpan] property will be `null`. When using [generateSpans] you can
+ * additionally pass [sourceUrl] to indicate where the [input] was extracted
+ * from.
  */
-DocumentFragment parseFragment(doc, {String container: "div",
-    String encoding, bool generateSpans: false}) {
-  var p = new HtmlParser(doc, encoding: encoding, generateSpans: generateSpans);
+DocumentFragment parseFragment(input, {String container: "div",
+    String encoding, bool generateSpans: false, String sourceUrl}) {
+  var p = new HtmlParser(input, encoding: encoding,
+      generateSpans: generateSpans, sourceUrl: sourceUrl);
   return p.parseFragment(container);
 }
 
@@ -71,7 +79,7 @@ class HtmlParser {
   /** Raise an exception on the first error encountered. */
   final bool strict;
 
-  /** True to generate [SourceSpan]s for the [Node.span] property. */
+  /** True to generate [Span]s for the [Node.sourceSpan] property. */
   final bool generateSpans;
 
   final HtmlTokenizer tokenizer;
@@ -148,13 +156,13 @@ class HtmlParser {
    */
   HtmlParser(input, {String encoding, bool parseMeta: true,
       bool lowercaseElementName: true, bool lowercaseAttrName: true,
-      this.strict: false, bool generateSpans: false, TreeBuilder tree,
-      bool this.cdataOK: false})
+      this.strict: false, bool generateSpans: false, String sourceUrl,
+      TreeBuilder tree, bool this.cdataOK: false})
       : generateSpans = generateSpans,
         tree = tree != null ? tree : new TreeBuilder(true),
         tokenizer = (input is HtmlTokenizer ? input :
           new HtmlTokenizer(input, encoding, parseMeta, lowercaseElementName,
-            lowercaseAttrName, generateSpans)) {
+            lowercaseAttrName, generateSpans, sourceUrl)) {
 
     tokenizer.parser = this;
     _initialPhase = new InitialPhase(this);
@@ -376,12 +384,12 @@ class HtmlParser {
    * The last span available. Used for EOF errors if we don't have something
    * better.
    */
-  SourceSpan get _lastSpan {
+  Span get _lastSpan {
     var pos = tokenizer.stream.position;
-    return new SourceSpan(tokenizer.stream.fileInfo, pos, pos);
+    return new FileSpan(tokenizer.stream.fileInfo, pos, pos);
   }
 
-  void parseError(SourceSpan span, String errorcode,
+  void parseError(Span span, String errorcode,
       [Map datavars = const {}]) {
 
     if (!generateSpans && span == null) {
@@ -2194,7 +2202,7 @@ class InTableTextPhase extends Phase {
     var span = null;
 
     if (parser.generateSpans) {
-      span = new SourceSpan.union(
+      span = new FileSpan.union(
           characterTokens[0].span,
           characterTokens.last.span);
     }
@@ -3347,22 +3355,27 @@ class AfterAfterFramesetPhase extends Phase {
 /** Error in parsed document. */
 class ParseError implements Exception {
   final String errorCode;
-  final SourceSpan span;
+  final Span span;
   final Map data;
 
   ParseError(this.errorCode, this.span, this.data);
 
-  int get line => span.line;
+  int get line => span.start.line;
 
-  int get column => span.column;
+  int get column => span.start.column;
 
   /**
-   * Gets the human readable error message for this error. Does not include
-   * any source span information, but you can use [span.getLocationMessage]
-   * if you want to provide a filename prefix, or [toString] if you want
-   * "ParseError" to be the prefix.
+   * Gets the human readable error message for this error. Use
+   * [span.getLocationMessage] or [toString] to get a message including span
+   * information. If there is a file associated with the span, both
+   * [span.getLocationMessage] and [toString] are equivalent. Otherwise,
+   * [span.getLocationMessage] will not show any source url information, but
+   * [toString] will include 'ParserError:' as a prefix.
    */
   String get message => formatStr(errorMessages[errorCode], data);
 
-  String toString() => span.getLocationMessage('ParseError', message);
+  String toString() {
+    var res = span.getLocationMessage(message);
+    return span.sourceUrl == null ? 'ParserError$res' : res;
+  }
 }

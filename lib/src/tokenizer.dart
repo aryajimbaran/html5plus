@@ -2,8 +2,9 @@ library tokenizer;
 
 import 'dart:collection';
 import 'dart:math';
-import '../dom_parsing.dart' show SourceSpan, isVoidElement;
-import '../parser.dart' show HtmlParser;
+import 'package:html5plus/parser.dart' show HtmlParser;
+import 'package:html5plus/dom_parsing.dart' show isVoidElement;
+import 'package:source_maps/span.dart' show Span, FileSpan;
 import 'constants.dart';
 import 'inputstream.dart';
 import 'token.dart';
@@ -65,8 +66,9 @@ class HtmlTokenizer implements Iterator<Token> {
   HtmlTokenizer(doc,
       [String encoding, bool parseMeta = true,
       this.lowercaseElementName = true, this.lowercaseAttrName = true,
-      bool generateSpans = false])
-      : stream = new HtmlInputStream(doc, encoding, parseMeta, generateSpans),
+      bool generateSpans = false, String sourceUrl])
+      : stream = new HtmlInputStream(
+            doc, encoding, parseMeta, generateSpans, sourceUrl),
         tokenQueue = new Queue(),
         generateSpans = generateSpans {
     reset();
@@ -122,7 +124,7 @@ class HtmlTokenizer implements Iterator<Token> {
   void _addToken(Token token) {
     if (generateSpans && token.span == null) {
       int offset = stream.position;
-      token.span = new SourceSpan(stream.fileInfo, _lastOffset, offset);
+      token.span = new FileSpan(stream.fileInfo, _lastOffset, offset);
       if (token is! ParseErrorToken) {
         _lastOffset = offset;
       }

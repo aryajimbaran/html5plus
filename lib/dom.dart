@@ -6,6 +6,7 @@ library dom;
 
 import 'dart:collection';
 import 'package:meta/meta.dart';
+import 'package:source_maps/span.dart' show Span;
 
 import 'src/constants.dart';
 import 'src/list_proxy.dart';
@@ -103,7 +104,7 @@ abstract class Node {
   // TODO(jmesserly): consider using an Expando for this, and put it in
   // dom_parsing. Need to check the performance affect.
   /** The source span of this node, if it was created by the [HtmlParser]. */
-  SourceSpan sourceSpan;
+  Span sourceSpan;
 
   /** The line number, or null if not available.
    * Notice that it is not part `dart:html` API. If you use it, it is harder to

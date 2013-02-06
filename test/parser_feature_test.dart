@@ -43,7 +43,7 @@ main() {
   <!DOCTYPE html>
   </body>
 </html>
-''', generateSpans: true);
+''', generateSpans: true, sourceUrl: 'ParseError');
     var doc = parser.parse();
     expect(doc.body.outerHtml, equals('<body>\n  \n  \n\n</body>'));
     expect(parser.errors.length, equals(1));
@@ -51,11 +51,11 @@ main() {
     expect(error.errorCode, equals('unexpected-doctype'));
 
     // Note: these values are 0-based, but the printed format is 1-based.
-    expect(error.span.line, equals(3));
-    expect(error.span.endLine, equals(3));
-    expect(error.span.column, equals(2));
-    expect(error.span.endColumn, equals(17));
-    expect(error.span.sourceText, equals('<!DOCTYPE html>'));
+    expect(error.span.start.line, equals(3));
+    expect(error.span.end.line, equals(3));
+    expect(error.span.start.column, equals(2));
+    expect(error.span.end.column, equals(17));
+    expect(error.span.text, equals('<!DOCTYPE html>'));
 
     expect(error.toString(), equals('''
 ParseError:4:3: Unexpected DOCTYPE. Ignored.
@@ -77,9 +77,9 @@ ParseError:4:3: Unexpected DOCTYPE. Ignored.
     expect(parser.errors.length, equals(1));
     ParseError error = parser.errors[0];
     expect(error.errorCode, equals('unexpected-doctype'));
-    expect(error.span.line, equals(3));
+    expect(error.span.start.line, equals(3));
     // Note: error position is at the end, not the beginning
-    expect(error.span.column, equals(17));
+    expect(error.span.start.column, equals(17));
   });
 
   test('void element innerHTML', () {
@@ -193,7 +193,7 @@ ParseError:4:3: Unexpected DOCTYPE. Ignored.
     expect(parser.errors[0].message,
         equals('Unexpected non-space characters. Expected DOCTYPE.'));
     expect(parser.errors[0].toString(),
-        equals('ParseError:1:4: Unexpected non-space characters. '
+        equals('ParserError:1:4: Unexpected non-space characters. '
                'Expected DOCTYPE.'));
   });
 }
