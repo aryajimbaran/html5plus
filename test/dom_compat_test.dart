@@ -24,7 +24,7 @@ void _runDrt(String htmlFile) {
   final future = Process.run('DumpRenderTree', [htmlFile])
     .then((ProcessResult pr) {
       expect(pr.exitCode, 0);
-      expect(pr.stdout, matches(allPassedRegExp));
+      expect(pr.stdout, matches(allPassedRegExp), reason: pr.stdout);
     });
 
   expect(future, completion(isNull));
