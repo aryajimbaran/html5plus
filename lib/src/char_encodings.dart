@@ -84,11 +84,11 @@ Iterable<int> decodeBytes(String encoding, List<int> bytes,
 List<int> toCodepoints(String input) {
   var newCodes = <int>[];
   for (int i = 0; i < input.length; i++) {
-    var c = input.charCodeAt(i);
+    var c = input.codeUnitAt(i);
     if (0xD800 <= c && c <= 0xDBFF) {
       int next = i + 1;
       if (next < input.length) {
-        var d = input.charCodeAt(next);
+        var d = input.codeUnitAt(next);
         if (0xDC00 <= d && d <= 0xDFFF) {
           c = 0x10000 + ((c - 0xD800) << 10) + (d - 0xDC00);
           i = next;

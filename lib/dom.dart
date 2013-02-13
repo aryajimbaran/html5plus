@@ -276,13 +276,13 @@ abstract class Node {
 
     int i = 0;
     const int DASH = 45;
-    if (selector.charCodeAt(i) == DASH) i++;
+    if (selector.codeUnitAt(i) == DASH) i++;
 
     if (i >= len || !isLetter(selector[i])) return false;
     i++;
 
     for (; i < len; i++) {
-      if (!isLetterOrDigit(selector[i]) && selector.charCodeAt(i) != DASH) {
+      if (!isLetterOrDigit(selector[i]) && selector.codeUnitAt(i) != DASH) {
         return false;
       }
     }

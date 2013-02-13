@@ -60,7 +60,7 @@ void runParserTest(String groupName, String innerHTML, String input,
         "\n\nInput:\n$input\n\nExpected errors (${errors.length}):\n"
         "${Strings.join(errors, '\n')}\n\n"
         "Actual errors (${parser.errors.length}):\n"
-        "${parser.errors.mappedBy((e) => '$e').join('\n')}");
+        "${parser.errors.map((e) => '$e').join('\n')}");
   }
 }
 

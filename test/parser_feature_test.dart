@@ -136,7 +136,7 @@ ParseError:4:3: Unexpected DOCTYPE. Ignored.
 
     test('Escaping non-breaking space', () {
       var text = '<span>foO\u00A0bar</span>';
-      expect(text.charCodeAt(text.indexOf('O') + 1), equals(0xA0));
+      expect(text.codeUnitAt(text.indexOf('O') + 1), equals(0xA0));
       var doc = parseFragment(text);
       expect(doc.outerHtml, equals('<span>foO&nbsp;bar</span>'));
     });

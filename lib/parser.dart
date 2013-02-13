@@ -2198,7 +2198,8 @@ class InTableTextPhase extends Phase {
   void flushCharacters() {
     if (characterTokens.length == 0) return;
 
-    var data = characterTokens.mappedBy((t) => t.data).join();
+    // TODO(sigmund,jmesserly): remove '' (dartbug.com/8480)
+    var data = characterTokens.map((t) => t.data).join('');
     var span = null;
 
     if (parser.generateSpans) {

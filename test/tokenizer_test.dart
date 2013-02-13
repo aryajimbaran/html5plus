@@ -199,7 +199,7 @@ void runTokenizerTest(Map testInfo) {
               testInfo['initialState'],
               "\nInput:", testInfo['input'],
               "\nExpected:", expected,
-              "\nreceived:", tokens].mappedBy((s) => '$s'), '\n');
+              "\nreceived:", tokens].map((s) => '$s'), '\n');
   var ignoreErrorOrder = testInfo['ignoreErrorOrder'];
   if (ignoreErrorOrder == null) ignoreErrorOrder = false;
 

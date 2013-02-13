@@ -17,7 +17,7 @@ class EncodingBytes extends Iterable<String> {
 
   EncodingBytes(this._bytes);
 
-  Iterator<String> get iterator => _bytes.splitChars().iterator;
+  Iterator<String> get iterator => _bytes.split('').iterator;
 
   int get length => _bytes.length;
 

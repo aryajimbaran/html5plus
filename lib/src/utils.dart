@@ -20,7 +20,7 @@ class Pair<F, S> {
 int parseIntRadix(String str, [int radix = 10]) {
   int val = 0;
   for (int i = 0; i < str.length; i++) {
-    var digit = str.charCodeAt(i);
+    var digit = str.codeUnitAt(i);
     if (digit >= LOWER_A) {
       digit += 10 - LOWER_A;
     } else if (digit >= UPPER_A) {
@@ -67,7 +67,7 @@ LinkedHashMap makeDict(List<List> items) {
 
 bool allWhitespace(String str) {
   for (int i = 0; i < str.length; i++) {
-    if (!isWhitespaceCC(str.charCodeAt(i))) return false;
+    if (!isWhitespaceCC(str.codeUnitAt(i))) return false;
   }
   return true;
 }
