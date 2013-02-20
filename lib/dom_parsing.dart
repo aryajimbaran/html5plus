@@ -71,43 +71,44 @@ class CodeMarkupVisitor extends TreeVisitor {
   String toString() => _str.toString();
 
   visitDocument(Document node) {
-    _str.add("<pre>");
+    _str.write("<pre>");
     visitChildren(node);
-    _str.add("</pre>");
+    _str.write("</pre>");
   }
 
   visitDocumentType(DocumentType node) {
-    _str.add('<code class="markup doctype">&lt;!DOCTYPE ${node.tagName}>'
+    _str.write('<code class="markup doctype">&lt;!DOCTYPE ${node.tagName}>'
         '</code>');
   }
 
   visitText(Text node) {
     // TODO(jmesserly): would be nice to use _addOuterHtml directly.
-    _str.add(node.outerHtml);
+    _str.write(node.outerHtml);
   }
 
   visitElement(Element node) {
-    _str.add('&lt;<code class="markup element-name">${node.tagName}</code>');
+    _str.write('&lt;<code class="markup element-name">${node.tagName}</code>');
     if (node.attributes.length > 0) {
       node.attributes.forEach((key, v) {
         v = htmlSerializeEscape(v, attributeMode: true);
-        _str.add(' <code class="markup attribute-name">$key</code>'
+        _str.write(' <code class="markup attribute-name">$key</code>'
             '=<code class="markup attribute-value">"$v"</code>');
       });
     }
     if (node.nodes.length > 0) {
-      _str.add(">");
+      _str.write(">");
       visitChildren(node);
     } else if (isVoidElement(node.tagName)) {
-      _str.add(">");
+      _str.write(">");
       return;
     }
-    _str.add('&lt;/<code class="markup element-name">${node.tagName}</code>>');
+    _str.write(
+        '&lt;/<code class="markup element-name">${node.tagName}</code>>');
   }
 
   visitComment(Comment node) {
     var data = htmlSerializeEscape(node.data);
-    _str.add('<code class="markup comment">&lt;!--${data}--></code>');
+    _str.write('<code class="markup comment">&lt;!--${data}--></code>');
   }
 }
 
@@ -147,9 +148,9 @@ String htmlSerializeEscape(String text, {bool attributeMode: false}) {
     }
     if (replace != null) {
       if (result == null) result = new StringBuffer(text.substring(0, i));
-      result.add(replace);
+      result.write(replace);
     } else if (result != null) {
-      result.add(ch);
+      result.write(ch);
     }
   }
 

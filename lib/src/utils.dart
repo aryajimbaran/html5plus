@@ -2,7 +2,7 @@
 library utils;
 
 import 'dart:collection';
-import 'package:unittest/unittest.dart';
+import 'package:unittest/matcher.dart';
 import 'constants.dart';
 
 typedef bool Predicate();
@@ -76,8 +76,8 @@ String padWithZeros(String str, int size) {
   if (str.length == size) return str;
   var result = new StringBuffer();
   size -= str.length;
-  for (int i = 0; i < size; i++) result.add('0');
-  result.add(str);
+  for (int i = 0; i < size; i++) result.write('0');
+  result.write(str);
   return result.toString();
 }
 
@@ -95,7 +95,7 @@ String formatStr(String format, Map data) {
     var search = '%($key)';
     int last = 0, match;
     while ((match = format.indexOf(search, last)) >= 0) {
-      result.add(format.substring(last, match));
+      result.write(format.substring(last, match));
       match += search.length;
 
       int digits = match;
@@ -110,15 +110,15 @@ String formatStr(String format, Map data) {
 
       switch (format[match]) {
         case 's':
-          result.add(value);
+          result.write(value);
           break;
         case 'd':
           var number = value.toString();
-          result.add(padWithZeros(number, numberSize));
+          result.write(padWithZeros(number, numberSize));
           break;
         case 'x':
           var number = value.toRadixString(16);
-          result.add(padWithZeros(number, numberSize));
+          result.write(padWithZeros(number, numberSize));
           break;
         default: throw "not implemented: formatStr does not support format "
             "character ${format[match]}";
@@ -127,7 +127,7 @@ String formatStr(String format, Map data) {
       last = match + 1;
     }
 
-    result.add(format.substring(last, format.length));
+    result.write(format.substring(last, format.length));
     format = result.toString();
   });
 

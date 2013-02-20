@@ -359,14 +359,14 @@ class DocumentType extends Node {
 
 
   void _addOuterHtml(StringBuffer str) {
-    str.add(toString());
+    str.write(toString());
   }
 
   DocumentType clone() => new DocumentType(tagName, publicId, systemId);
 }
 
 class Text extends Node {
-  String text;
+  String text; //Tom: rename to consistent with dart:html
 
   Text(this.text) : super(null);
 
@@ -378,9 +378,9 @@ class Text extends Node {
     // Don't escape text for certain elements, notably <script>.
     if (rcdataElements.contains(parent.tagName) ||
         parent.tagName == 'plaintext') {
-      str.add(text);
+      str.write(text);
     } else {
-      str.add(htmlSerializeEscape(text));
+      str.write(htmlSerializeEscape(text));
     }
   }
 
@@ -463,29 +463,29 @@ class Element extends Node {
         namespace == Namespaces.html ||
         namespace == Namespaces.mathml ||
         namespace == Namespaces.svg) {
-      str.add('<$tagName');
+      str.write('<$tagName');
     } else {
       // TODO(jmesserly): the spec doesn't define "qualified name".
       // I'm not sure if this is correct, but it should parse reasonably.
-      str.add('<${Namespaces.getPrefix(namespace)}:$tagName');
+      str.write('<${Namespaces.getPrefix(namespace)}:$tagName');
     }
 
     if (attributes.length > 0) {
       attributes.forEach((key, v) {
         // Note: AttributeName.toString handles serialization of attribute
         // namespace, if needed.
-        str.add(' $key="${htmlSerializeEscape(v, attributeMode: true)}"');
+        str.write(' $key="${htmlSerializeEscape(v, attributeMode: true)}"');
       });
     }
 
-    str.add('>');
+    str.write('>');
 
     if (nodes.length > 0) {
       if (tagName == 'pre' || tagName == 'textarea' || tagName == 'listing') {
         if (nodes[0] is Text && nodes[0].value.startsWith('\n')) {
           // These nodes will remove a leading \n at parse time, so if we still
           // have one, it means we started with two. Add it back.
-          str.add('\n');
+          str.write('\n');
         }
       }
 
@@ -494,7 +494,7 @@ class Element extends Node {
 
     // void elements must not have an end tag
     // http://dev.w3.org/html5/markup/syntax.html#void-elements
-    if (!isVoidElement(tagName)) str.add('</$tagName>');
+    if (!isVoidElement(tagName)) str.write('</$tagName>');
   }
 
   Element clone() => new Element(tagName, namespace)
@@ -524,7 +524,7 @@ class Comment extends Node {
   String toString() => "<!-- $data -->";
 
   void _addOuterHtml(StringBuffer str) {
-    str.add("<!--$data-->");
+    str.write("<!--$data-->");
   }
 
   Comment clone() => new Comment(data);
@@ -675,7 +675,7 @@ class FilteredElementList extends Collection<Element> implements List<Element> {
     return element is Element && _childNodes.contains(element);
   }
 
-  List<Element> get reversed => _filtered.reversed;
+  Iterable<Element> get reversed => _filtered.reversed;
 
   void sort([int compare(Element a, Element b)]) {
     // TODO(jacobr): should we impl?

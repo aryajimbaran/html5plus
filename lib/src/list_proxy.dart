@@ -73,5 +73,5 @@ class ListProxy<E> extends Collection<E> implements List<E> {
     _list.insertRange(start, length, initialValue);
   }
 
-  List<E> get reversed => _list.reversed;
+  Iterable<E> get reversed => _list.reversed;
 }
