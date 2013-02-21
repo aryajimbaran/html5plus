@@ -27,7 +27,7 @@ String namespaceHtml(String expected) {
       lines[i] = "${match[1]}<html ${match[2]}>";
     }
   }
-  return Strings.join(lines, "\n");
+  return lines.join("\n");
 }
 
 void runParserTest(String groupName, String innerHTML, String input,
@@ -58,7 +58,7 @@ void runParserTest(String groupName, String innerHTML, String input,
   if (checkParseErrors) {
     expect(parser.errors.length, equals(errors.length), reason:
         "\n\nInput:\n$input\n\nExpected errors (${errors.length}):\n"
-        "${Strings.join(errors, '\n')}\n\n"
+        "${errors.join('\n')}\n\n"
         "Actual errors (${parser.errors.length}):\n"
         "${parser.errors.map((e) => '$e').join('\n')}");
   }

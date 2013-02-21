@@ -195,11 +195,11 @@ void runTokenizerTest(Map testInfo) {
   var tokens = parser.parse(testInfo['input']);
   tokens = concatenateCharacterTokens(tokens);
   var received = normalizeTokens(tokens);
-  var errorMsg = Strings.join(["\n\nInitial state:",
+  var errorMsg = ["\n\nInitial state:",
               testInfo['initialState'],
               "\nInput:", testInfo['input'],
               "\nExpected:", expected,
-              "\nreceived:", tokens].map((s) => '$s'), '\n');
+              "\nreceived:", tokens].map((s) => '$s').join('\n');
   var ignoreErrorOrder = testInfo['ignoreErrorOrder'];
   if (ignoreErrorOrder == null) ignoreErrorOrder = false;
 
