@@ -66,36 +66,36 @@ void runParserTest(String groupName, String innerHTML, String input,
 
 
 void main() {
-  getDataFiles('tree-construction').then((files) {
-    for (var path in files) {
-      var tests = new TestData(path, "data");
-      var testName = new Path(path).filename.replaceAll(".dat", "");
+  for (var path in getDataFiles('tree-construction')) {
+    if (!path.endsWith('.dat')) continue;
 
-      group(testName, () {
-        int index = 0;
-        for (var testData in tests) {
-          var input = testData['data'];
-          var errors = testData['errors'];
-          var innerHTML = testData['document-fragment'];
-          var expected = testData['document'];
-          if (errors != null) {
-            errors = errors.split("\n");
-          }
+    var tests = new TestData(path, "data");
+    var testName = new Path(path).filename.replaceAll(".dat", "");
 
-          for (var treeCtor in treeTypes.values) {
-            for (var namespaceHTMLElements in const [false, true]) {
-              test(_nameFor(input), () {
-                runParserTest(testName, innerHTML, input, expected, errors,
-                    treeCtor, namespaceHTMLElements);
-              });
-            }
-          }
-
-          index++;
+    group(testName, () {
+      int index = 0;
+      for (var testData in tests) {
+        var input = testData['data'];
+        var errors = testData['errors'];
+        var innerHTML = testData['document-fragment'];
+        var expected = testData['document'];
+        if (errors != null) {
+          errors = errors.split("\n");
         }
-      });
-    }
-  });
+
+        for (var treeCtor in treeTypes.values) {
+          for (var namespaceHTMLElements in const [false, true]) {
+            test(_nameFor(input), () {
+              runParserTest(testName, innerHTML, input, expected, errors,
+                  treeCtor, namespaceHTMLElements);
+            });
+          }
+        }
+
+        index++;
+      }
+    });
+  }
 }
 
 /** Extract the name for the test based on the test input data. */

@@ -244,28 +244,27 @@ String camelCase(String s) {
 }
 
 void main() {
-  getDataFiles('tokenizer', (p) => p.endsWith('.test')).then((files) {
-    for (var path in files) {
+  for (var path in getDataFiles('tokenizer')) {
+    if (!path.endsWith('.test')) continue;
 
-      var text = new File(path).readAsStringSync();
-      var tests = json.parse(text);
-      var testName = new Path(path).filename.replaceAll(".test","");
-      var testList = tests['tests'];
-      if (testList == null) continue;
+    var text = new File(path).readAsStringSync();
+    var tests = json.parse(text);
+    var testName = new Path(path).filename.replaceAll(".test","");
+    var testList = tests['tests'];
+    if (testList == null) continue;
 
-      group(testName, () {
-        for (int index = 0; index < testList.length; index++) {
-          final testInfo = testList[index];
+    group(testName, () {
+      for (int index = 0; index < testList.length; index++) {
+        final testInfo = testList[index];
 
-          testInfo.putIfAbsent("initialStates", () => ["Data state"]);
-          for (var initialState in testInfo["initialStates"]) {
-            test(testInfo["description"], () {
-              testInfo["initialState"] = camelCase(initialState);
-              runTokenizerTest(testInfo);
-            });
-          }
+        testInfo.putIfAbsent("initialStates", () => ["Data state"]);
+        for (var initialState in testInfo["initialStates"]) {
+          test(testInfo["description"], () {
+            testInfo["initialState"] = camelCase(initialState);
+            runTokenizerTest(testInfo);
+          });
         }
-      });
-    }
-  });
+      }
+    });
+  }
 }

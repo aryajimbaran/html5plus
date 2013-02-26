@@ -7,7 +7,7 @@
  *     main() {
  *       var document = parse(
  *           '<body>Hello world! <a href="www.html5rocks.com">HTML5 rocks!');
- *       print(document.outerHTML);
+ *       print(document.outerHtml);
  *     }
  *
  * The resulting document you get back has a DOM-like API for easy tree

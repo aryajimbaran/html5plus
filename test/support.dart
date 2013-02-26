@@ -20,24 +20,9 @@ Map<String, TreeBuilderFactory> get treeTypes {
 
 final testDataDir = '';
 
-typedef bool FileMatcher(String fileName);
-
-Future<List<String>> getDataFiles(String subdirectory, [FileMatcher matcher]) {
-  if (matcher == null) matcher = (path) => path.endsWith('.dat');
-
-  // TODO(jmesserly): should have listSync for scripting...
-  // This entire method was one line of Python code
+Iterable<String> getDataFiles(String subdirectory) {
   var dir = new Directory.fromPath(new Path('test/data/$subdirectory'));
-  var lister = dir.list();
-  var files = <String>[];
-  lister.onFile = (file) {
-    if (matcher(file)) files.add(file);
-  };
-  var completer = new Completer<List<String>>();
-  lister.onDone = (success) {
-    completer.complete(files);
-  };
-  return completer.future;
+  return dir.listSync().where((f) => f is File).map((f) => f.name);
 }
 
 // TODO(jmesserly): make this class simpler. We could probably split on
