@@ -177,7 +177,7 @@ ParseError:4:3: Unexpected DOCTYPE. Ignored.
     // ensure IO support is unregistered
     expect(inputstream.consoleSupport,
       new isInstanceOf<inputstream.ConsoleSupport>());
-    var file = new File('test/data/parser_feature/raw_file.html').openSync();
+    var file = new File('$testDataDir/parser_feature/raw_file.html').openSync();
     expect(() => parse(file), throwsA(new isInstanceOf<ArgumentError>()));
     parser_console.useConsole();
     expect(parse(file).body.innerHtml.trim(), equals('Hello world!'));

@@ -18,10 +18,10 @@ Map<String, TreeBuilderFactory> get treeTypes {
   return _treeTypes;
 }
 
-final testDataDir = '';
+String testDataDir = 'test/data';
 
 Iterable<String> getDataFiles(String subdirectory) {
-  var dir = new Directory.fromPath(new Path('test/data/$subdirectory'));
+  var dir = new Directory.fromPath(new Path('$testDataDir/$subdirectory'));
   return dir.listSync().where((f) => f is File).map((f) => f.name);
 }
 
