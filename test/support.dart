@@ -22,7 +22,7 @@ String testDataDir = 'test/data';
 
 Iterable<String> getDataFiles(String subdirectory) {
   var dir = new Directory.fromPath(new Path('$testDataDir/$subdirectory'));
-  return dir.listSync().where((f) => f is File).map((f) => f.name);
+  return dir.listSync().where((f) => f is File).map((f) => f.path);
 }
 
 // TODO(jmesserly): make this class simpler. We could probably split on

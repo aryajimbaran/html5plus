@@ -677,6 +677,8 @@ class FilteredElementList extends Collection<Element> implements List<Element> {
 
   Iterable<Element> get reversed => _filtered.reversed;
 
+  Map<int, Element> asMap() => _filtered.asMap();
+
   void sort([int compare(Element a, Element b)]) {
     // TODO(jacobr): should we impl?
     throw new UnimplementedError();

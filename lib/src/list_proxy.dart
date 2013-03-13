@@ -49,7 +49,8 @@ class ListProxy<E> extends Collection<E> implements List<E> {
   operator []=(int index, E value) { _list[index] = value; }
   set length(int value) { _list.length = value; }
   void add(E value) { _list.add(value); }
-  void addLast(E value) { _list.addLast(value); }
+
+  void addLast(E value) { add(value); }
   void addAll(Iterable<E> collection) { _list.addAll(collection); }
   void sort([int compare(E a, E b)]) { _list.sort(compare); }
 
@@ -74,4 +75,6 @@ class ListProxy<E> extends Collection<E> implements List<E> {
   }
 
   Iterable<E> get reversed => _list.reversed;
+
+  Map<int, E> asMap() => _list.asMap();
 }
