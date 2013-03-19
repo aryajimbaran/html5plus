@@ -260,7 +260,7 @@ class HtmlTokenizer implements Iterator<Token> {
 
       int entityLen;
       for (entityLen = charStack.length - 1; entityLen > 1; entityLen--) {
-        var possibleEntityName = charStack.getRange(0, entityLen).join();
+        var possibleEntityName = charStack.sublist(0, entityLen).join();
         if (entities.containsKey(possibleEntityName)) {
           entityName = possibleEntityName;
           break;

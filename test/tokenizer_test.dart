@@ -236,9 +236,9 @@ String camelCase(String s) {
   s = s.toLowerCase();
   var result = new StringBuffer();
   for (var match in new RegExp(r"\W+(\w)(\w+)").allMatches(s)) {
-    if (result.length == 0) result.add(s.substring(0, match.start));
-    result.add(match.group(1).toUpperCase());
-    result.add(match.group(2));
+    if (result.length == 0) result.write(s.substring(0, match.start));
+    result.write(match.group(1).toUpperCase());
+    result.write(match.group(2));
   }
   return result.toString();
 }

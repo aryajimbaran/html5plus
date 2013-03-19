@@ -37,7 +37,7 @@ List<int> readAllBytesFromFile(RandomAccessFile file) {
     if (read <= 0) {
       // This could happen if, for example, the file was resized while
       // we're reading. Just shrink the bytes array and move on.
-      bytes = bytes.getRange(0, bytesRead);
+      bytes = bytes.sublist(0, bytesRead);
       break;
     }
     bytesRead += read;

@@ -264,7 +264,7 @@ class HtmlInputStream {
       _offset++;
     }
 
-    return new String.fromCharCodes(_chars.getRange(start, _offset - start));
+    return new String.fromCharCodes(_chars.sublist(start, _offset));
   }
 
   void unget(String ch) {

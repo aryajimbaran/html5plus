@@ -186,7 +186,7 @@ abstract class Node {
     if (refNode == null) {
       nodes.add(node);
     } else {
-      nodes.insertAt(nodes.indexOf(refNode), node);
+      nodes.insert(nodes.indexOf(refNode), node);
     }
   }
 
@@ -585,6 +585,10 @@ class NodeList extends ListProxy<Node> {
     super.addAll(list);
   }
 
+  void insert(int index, Node value) {
+    super.insert(index, _setParent(value));
+  }
+
   Node removeLast() => super.removeLast()..parent = null;
 
   Node removeAt(int i) => super.removeAt(i)..parent = null;
@@ -605,7 +609,7 @@ class NodeList extends ListProxy<Node> {
                 [int startFrom = 0]) {
     if (from is NodeList) {
       // Note: this is presumed to make a copy
-      from = from.getRange(startFrom, rangeLength);
+      from = from.sublist(startFrom, startFrom + rangeLength);
     }
     // Note: see comment in [addAll]. We need to be careful about the order of
     // operations if [from] is also a NodeList.
@@ -671,6 +675,10 @@ class FilteredElementList extends Collection<Element> implements List<Element> {
     add(value);
   }
 
+  void insert(int index, Element value) {
+    throw new UnimplementedError();
+  }
+
   bool contains(Element element) {
     return element is Element && _childNodes.contains(element);
   }
@@ -689,7 +697,7 @@ class FilteredElementList extends Collection<Element> implements List<Element> {
   }
 
   void removeRange(int start, int rangeLength) {
-    _filtered.getRange(start, rangeLength).forEach((el) => el.remove());
+    _filtered.sublist(start, start + rangeLength).forEach((el) => el.remove());
   }
 
   void insertRange(int start, int rangeLength, [initialValue = null]) {
@@ -721,8 +729,12 @@ class FilteredElementList extends Collection<Element> implements List<Element> {
   Iterator<Element> get iterator => _filtered.iterator;
   Element operator [](int index) => _filtered[index];
 
+  List<Element> sublist(int start, [int end]) => _filtered.sublist(start, end);
+
+  @deprecated
   List<Element> getRange(int start, int rangeLength) =>
-    _filtered.getRange(start, rangeLength);
+    _filtered.sublist(start, start + rangeLength);
+
   int indexOf(Element element, [int start = 0]) =>
     _filtered.indexOf(element, start);
 

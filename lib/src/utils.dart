@@ -52,7 +52,7 @@ List slice(List list, int start, [int end]) {
   // Ensure the indexes are in bounds.
   if (end < start) end = start;
   if (end > list.length) end = list.length;
-  return list.getRange(start, end - start);
+  return list.sublist(start, end);
 }
 
 /** Makes a dictionary, where the first key wins. */

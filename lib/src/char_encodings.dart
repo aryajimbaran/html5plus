@@ -31,7 +31,7 @@ Iterable<int> decodeBytes(String encoding, List<int> bytes,
   final replace = replacementCodepoint;
   switch (encoding) {
     case 'ascii':
-      bytes = bytes.getRange(offset, length);
+      bytes = bytes.sublist(offset, offset + length);
       // TODO(jmesserly): this was taken from runtime/bin/string_stream.dart
       for (int byte in bytes) {
         if (byte > 127) {

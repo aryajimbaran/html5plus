@@ -4,11 +4,11 @@ authors:
 - Tom Yeh <tomyeh@rikulo.org>
 homepage: https://github.com/tomyeh/html5plus
 description: A fork of html5lib for working with HTML and XML documents.
-version: 0.4.0
+version: 0.4.1
 dependencies:
   browser: '>=0.3.2'
   meta: any
   unittest: any
-  source_maps: ">=0.4.0 <0.4.1"
+  source_maps: ">=0.4.1 <0.4.2"
 environment:
-  sdk: ">=0.4.1+0.r19425"
+  sdk: ">=0.4.2+0.r20121"

@@ -4,6 +4,8 @@
 /** A [List] proxy that you can subclass. */
 library list_proxy;
 
+import 'package:meta/meta.dart';
+
 // TODO(jmesserly): this should extend the base list.
 // See http://code.google.com/p/dart/issues/detail?id=949
 /** A [List<T>] proxy that you can subclass. */
@@ -29,9 +31,7 @@ class ListProxy<E> extends Collection<E> implements List<E> {
     return true;
   }
 
-  // TODO(jmesserly): This should be on List, to match removeAt.
-  // See http://code.google.com/p/dart/issues/detail?id=5375
-  void insertAt(int index, E item) => insertRange(index, 1, item);
+  void insert(int index, E item) => _list.insert(index, item);
 
   // Override from Iterable to fix performance
   // Length and last become O(1) instead of O(N)
@@ -65,7 +65,13 @@ class ListProxy<E> extends Collection<E> implements List<E> {
     return result;
   }
   E removeLast() => _list.removeLast();
-  List<E> getRange(int start, int length) => _list.getRange(start, length);
+
+  List<E> sublist(int start, [int end]) => _list.sublist(start, end);
+
+  @deprecated
+  List<E> getRange(int start, int length) =>
+    _list.sublist(start, start + length);
+
   void setRange(int start, int length, List<E> from, [int startFrom]) {
     _list.setRange(start, length, from, startFrom);
   }

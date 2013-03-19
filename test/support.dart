@@ -121,13 +121,13 @@ class TestSerializer extends TreeVisitor {
   }
 
   void _newline() {
-    if (_str.length > 0) _str.add('\n');
-    _str.add('|$_spaces');
+    if (_str.length > 0) _str.write('\n');
+    _str.write('|$_spaces');
   }
 
   visitNodeFallback(Node node) {
     _newline();
-    _str.add(node);
+    _str.write(node);
     visitChildren(node);
   }
 
@@ -145,7 +145,7 @@ class TestSerializer extends TreeVisitor {
 
   visitElement(Element node) {
     _newline();
-    _str.add(node);
+    _str.write(node);
     if (node.attributes.length > 0) {
       indent += 2;
       var keys = new List.from(node.attributes.keys);
@@ -157,7 +157,7 @@ class TestSerializer extends TreeVisitor {
           key = "${attr.prefix} ${attr.name}";
         }
         _newline();
-        _str.add('$key="$v"');
+        _str.write('$key="$v"');
       }
       indent -= 2;
     }
