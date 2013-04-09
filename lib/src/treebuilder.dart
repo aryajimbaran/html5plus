@@ -3,7 +3,7 @@ library treebuilder;
 
 import 'dart:collection';
 import 'package:html5plus/dom.dart';
-import 'package:source_maps/span.dart' show Span;
+import 'package:source_maps/span.dart' show FileSpan;
 import 'constants.dart';
 import 'list_proxy.dart';
 import 'token.dart';
@@ -239,7 +239,7 @@ class TreeBuilder {
     document.nodes.add(doctype);
   }
 
-  void insertComment(Token token, [Node parent]) {
+  void insertComment(StringToken token, [Node parent]) {
     if (parent == null) {
       parent = openElements.last;
     }
@@ -308,7 +308,7 @@ class TreeBuilder {
   }
 
   /** Insert text data. */
-  void insertText(String data, Span span) {
+  void insertText(String data, FileSpan span) {
     var parent = openElements.last;
 
     if (!insertFromTable || insertFromTable &&
@@ -326,13 +326,18 @@ class TreeBuilder {
    * Insert [data] as text in the current node, positioned before the
    * start of node [refNode] or to the end of the node's text.
    */
-  static void _insertText(Node parent, String data, Span span,
+  static void _insertText(Node parent, String data, FileSpan span,
       [Element refNode]) {
     var nodes = parent.nodes;
     if (refNode == null) {
       if (nodes.length > 0 && nodes.last is Text) {
         Text last = nodes.last;
         last.text = '${last.text}$data';
+
+        if (span != null) {
+          last.sourceSpan = span.file.span(last.sourceSpan.start.offset,
+              span.end.offset);
+        }
       } else {
         nodes.add(new Text(data)..sourceSpan = span);
       }

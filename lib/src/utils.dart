@@ -2,7 +2,6 @@
 library utils;
 
 import 'dart:collection';
-import 'package:unittest/matcher.dart';
 import 'constants.dart';
 
 typedef bool Predicate();
@@ -53,16 +52,6 @@ List slice(List list, int start, [int end]) {
   if (end < start) end = start;
   if (end > list.length) end = list.length;
   return list.sublist(start, end);
-}
-
-/** Makes a dictionary, where the first key wins. */
-LinkedHashMap makeDict(List<List> items) {
-  var result = new LinkedHashMap();
-  for (var item in items) {
-    expect(item.length, equals(2));
-    result.putIfAbsent(item[0], () => item[1]);
-  }
-  return result;
 }
 
 bool allWhitespace(String str) {

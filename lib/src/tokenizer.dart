@@ -43,6 +43,9 @@ class HtmlTokenizer implements Iterator<Token> {
   /** True to generate spans in for [Token.span]. */
   final bool generateSpans;
 
+  /** True to generate spans for attributes. */
+  final bool attributeSpans;
+
   /**
    * This reference to the parser is used for correct CDATA handling.
    * The [HtmlParser] will set this at construction time.
@@ -63,10 +66,15 @@ class HtmlTokenizer implements Iterator<Token> {
 
   int _lastOffset;
 
-  HtmlTokenizer(doc,
-      [String encoding, bool parseMeta = true,
-      this.lowercaseElementName = true, this.lowercaseAttrName = true,
-      bool generateSpans = false, String sourceUrl])
+  // TODO(jmesserly): ideally this would be a LinkedHashMap and we wouldn't add
+  // an item until it's ready. But the code doesn't have a clear notion of when
+  // it's "done" with the attribute.
+  List<TagAttribute> _attributes;
+  Set<String> _attributeNames;
+
+  HtmlTokenizer(doc, {String encoding, bool parseMeta: true,
+      this.lowercaseElementName: true, this.lowercaseAttrName: true,
+      bool generateSpans: false, String sourceUrl, this.attributeSpans: false})
       : stream = new HtmlInputStream(
             doc, encoding, parseMeta, generateSpans, sourceUrl),
         tokenQueue = new Queue(),
@@ -74,14 +82,48 @@ class HtmlTokenizer implements Iterator<Token> {
     reset();
   }
 
-  get lastData => currentToken.data.last;
-
   TagToken get currentTagToken => currentToken;
   DoctypeToken get currentDoctypeToken => currentToken;
   ProcessingInstructionToken get currentProcessingInstructionToken => currentToken;
+  StringToken get currentStringToken => currentToken;
 
   Token _current;
   Token get current => _current;
+
+  String get _attributeName => _attributes.last.name;
+  set _attributeName(String value) {
+    _attributes.last.name = value;
+  }
+
+  String get _attributeValue => _attributes.last.value;
+  set _attributeValue(String value) {
+    _attributes.last.value = value;
+  }
+
+  void _markAttributeEnd(int offset) {
+    if (attributeSpans) _attributes.last.end = stream.position + offset;
+  }
+
+  void _markAttributeValueStart(int offset) {
+    if (attributeSpans) _attributes.last.startValue = stream.position + offset;
+  }
+
+  void _markAttributeValueEnd(int offset) {
+    if (attributeSpans) {
+      _attributes.last.endValue = stream.position + offset;
+      _markAttributeEnd(offset);
+    }
+  }
+
+  // Note: we could track the name span here, if we need it.
+  void _markAttributeNameEnd(int offset) => _markAttributeEnd(offset);
+
+  void _addAttribute(String name) {
+    if (_attributes == null) _attributes = [];
+    var attr = new TagAttribute(name);
+    _attributes.add(attr);
+    if (attributeSpans) attr.start = stream.position - name.length;
+  }
 
   /**
    * This is where the magic happens.
@@ -117,6 +159,8 @@ class HtmlTokenizer implements Iterator<Token> {
     tokenQueue.clear();
     currentToken = null;
     temporaryBuffer = null;
+    _attributes = null;
+    _attributeNames = null;
     state = dataState;
   }
 
@@ -290,7 +334,7 @@ class HtmlTokenizer implements Iterator<Token> {
       }
     }
     if (fromAttribute) {
-      lastData[1] = '${lastData[1]}${output}';
+      _attributeValue = '$_attributeValue$output';
     } else {
       var token;
       if (isWhitespace(output)) {
@@ -320,19 +364,29 @@ class HtmlTokenizer implements Iterator<Token> {
         token.name = asciiUpper2Lower(token.name);
       }
       if (token is EndTagToken) {
-        if (token.data.length > 0) {
+        if (_attributes != null) {
           _addToken(new ParseErrorToken("attributes-in-end-tag"));
         }
         if (token.selfClosing) {
-          _addToken(new ParseErrorToken(
-              "this-closing-flag-on-end-tag"));
+          _addToken(new ParseErrorToken("this-closing-flag-on-end-tag"));
+        }
+      } else if (token is StartTagToken) {
+        // HTML5 specific normalizations to the token stream.
+        // Convert the list into a map where first key wins.
+        token.data = new LinkedHashMap<Object, String>();
+        if (_attributes != null) {
+          for (var attr in _attributes) {
+            token.data.putIfAbsent(attr.name, () => attr.value);
+          }
+          if (attributeSpans) token.attributeSpans = _attributes;
         }
       }
+      _attributes = null;
+      _attributeNames = null;
     }
     _addToken(token);
     state = dataState;
   }
-
 
   // Below are the various tokenizer states worked out.
 
@@ -380,8 +434,8 @@ class HtmlTokenizer implements Iterator<Token> {
       // Tokenization ends.
       return false;
     } else if (data == "\u0000") {
-        _addToken(new ParseErrorToken("invalid-codepoint"));
-        _addToken(new CharactersToken("\uFFFD"));
+      _addToken(new ParseErrorToken("invalid-codepoint"));
+      _addToken(new CharactersToken("\uFFFD"));
     } else if (isWhitespace(data)) {
       // Directly after emitting a token you switch back to the "data
       // state". At that point spaceCharacters are important so they are
@@ -518,7 +572,7 @@ class HtmlTokenizer implements Iterator<Token> {
       _addToken(new ParseErrorToken("invalid-codepoint"));
       currentTagToken.name = '${currentTagToken.name}\uFFFD';
     } else {
-      currentTagToken.name = '${currentTagToken.name}${data}';
+      currentTagToken.name = '${currentTagToken.name}$data';
       // (Don't use charsUntil here, because tag names are
       // very short and it's faster to not do anything fancy)
     }
@@ -541,7 +595,7 @@ class HtmlTokenizer implements Iterator<Token> {
   bool rcdataEndTagOpenState() {
     var data = stream.char();
     if (isLetter(data)) {
-      temporaryBuffer = '${temporaryBuffer}${data}';
+      temporaryBuffer = '${temporaryBuffer}$data';
       state = rcdataEndTagNameState;
     } else {
       _addToken(new CharactersToken("</"));
@@ -570,7 +624,7 @@ class HtmlTokenizer implements Iterator<Token> {
       emitCurrentToken();
       state = dataState;
     } else if (isLetter(data)) {
-      temporaryBuffer = '${temporaryBuffer}${data}';
+      temporaryBuffer = '${temporaryBuffer}$data';
     } else {
       _addToken(new CharactersToken("</$temporaryBuffer"));
       stream.unget(data);
@@ -595,7 +649,7 @@ class HtmlTokenizer implements Iterator<Token> {
   bool rawtextEndTagOpenState() {
     var data = stream.char();
     if (isLetter(data)) {
-      temporaryBuffer = '${temporaryBuffer}${data}';
+      temporaryBuffer = '${temporaryBuffer}$data';
       state = rawtextEndTagNameState;
     } else {
       _addToken(new CharactersToken("</"));
@@ -619,7 +673,7 @@ class HtmlTokenizer implements Iterator<Token> {
       emitCurrentToken();
       state = dataState;
     } else if (isLetter(data)) {
-      temporaryBuffer = '${temporaryBuffer}${data}';
+      temporaryBuffer = '${temporaryBuffer}$data';
     } else {
       _addToken(new CharactersToken("</$temporaryBuffer"));
       stream.unget(data);
@@ -647,7 +701,7 @@ class HtmlTokenizer implements Iterator<Token> {
   bool scriptDataEndTagOpenState() {
     var data = stream.char();
     if (isLetter(data)) {
-      temporaryBuffer = '${temporaryBuffer}${data}';
+      temporaryBuffer = '${temporaryBuffer}$data';
       state = scriptDataEndTagNameState;
     } else {
       _addToken(new CharactersToken("</"));
@@ -671,7 +725,7 @@ class HtmlTokenizer implements Iterator<Token> {
       emitCurrentToken();
       state = dataState;
     } else if (isLetter(data)) {
-      temporaryBuffer = '${temporaryBuffer}${data}';
+      temporaryBuffer = '${temporaryBuffer}$data';
     } else {
       _addToken(new CharactersToken("</$temporaryBuffer"));
       stream.unget(data);
@@ -809,7 +863,7 @@ class HtmlTokenizer implements Iterator<Token> {
       emitCurrentToken();
       state = dataState;
     } else if (isLetter(data)) {
-      temporaryBuffer = '${temporaryBuffer}${data}';
+      temporaryBuffer = '${temporaryBuffer}$data';
     } else {
       _addToken(new CharactersToken("</$temporaryBuffer"));
       stream.unget(data);
@@ -829,7 +883,7 @@ class HtmlTokenizer implements Iterator<Token> {
       }
     } else if (isLetter(data)) {
       _addToken(new CharactersToken(data));
-      temporaryBuffer = '${temporaryBuffer}${data}';
+      temporaryBuffer = '${temporaryBuffer}$data';
     } else {
       stream.unget(data);
       state = scriptDataEscapedState;
@@ -929,7 +983,7 @@ class HtmlTokenizer implements Iterator<Token> {
       }
     } else if (isLetter(data)) {
       _addToken(new CharactersToken(data));
-      temporaryBuffer = '${temporaryBuffer}${data}';
+      temporaryBuffer = '${temporaryBuffer}$data';
     } else {
       stream.unget(data);
       state = scriptDataDoubleEscapedState;
@@ -942,27 +996,25 @@ class HtmlTokenizer implements Iterator<Token> {
     if (isWhitespace(data)) {
       stream.charsUntil(spaceCharacters, true);
     } else if (isLetter(data)) {
-      currentToken.data.add([data, ""]);
+      _addAttribute(data);
       state = attributeNameState;
     } else if (data == ">") {
       emitCurrentToken();
     } else if (data == "/") {
       state = selfClosingStartTagState;
     } else if (data == EOF) {
-      _addToken(new ParseErrorToken(
-          "expected-attribute-name-but-got-eof"));
+      _addToken(new ParseErrorToken("expected-attribute-name-but-got-eof"));
       state = dataState;
     } else if ("'\"=<".contains(data)) {
-      _addToken(new ParseErrorToken(
-          "invalid-character-in-attribute-name"));
-      currentToken.data.add([data, ""]);
+      _addToken(new ParseErrorToken("invalid-character-in-attribute-name"));
+      _addAttribute(data);
       state = attributeNameState;
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      currentToken.data.add(["\uFFFD", ""]);
+      _addAttribute("\uFFFD");
       state = attributeNameState;
     } else {
-      currentToken.data.add([data, ""]);
+      _addAttribute(data);
       state = attributeNameState;
     }
     return true;
@@ -975,7 +1027,7 @@ class HtmlTokenizer implements Iterator<Token> {
     if (data == "=") {
       state = beforeAttributeValueState;
     } else if (isLetter(data)) {
-      lastData[0] = '${lastData[0]}${data}'
+      _attributeName = '$_attributeName$data'
           '${stream.charsUntil(asciiLetters, true)}';
       leavingThisState = false;
     } else if (data == ">") {
@@ -989,34 +1041,35 @@ class HtmlTokenizer implements Iterator<Token> {
       state = selfClosingStartTagState;
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      lastData[0] = '${lastData[0]}\uFFFD';
+      _attributeName = '${_attributeName}\uFFFD';
       leavingThisState = false;
     } else if (data == EOF) {
       _addToken(new ParseErrorToken("eof-in-attribute-name"));
       state = dataState;
     } else if ("'\"<".contains(data)) {
       _addToken(new ParseErrorToken("invalid-character-in-attribute-name"));
-      lastData[0] = '${lastData[0]}${data}';
+      _attributeName = '$_attributeName$data';
       leavingThisState = false;
     } else {
-      lastData[0] = '${lastData[0]}${data}';
+      _attributeName = '$_attributeName$data';
       leavingThisState = false;
     }
 
     if (leavingThisState) {
+      _markAttributeNameEnd(-1);
+
       // Attributes are not dropped at this stage. That happens when the
       // start tag token is emitted so values can still be safely appended
       // to attributes, but we do want to report the parse error in time.
       if (lowercaseAttrName) {
-        lastData[0] = asciiUpper2Lower(lastData[0]);
+        _attributeName = asciiUpper2Lower(_attributeName);
       }
-      for (int i = 0; i < currentToken.data.length - 1; i++) {
-        var name = currentToken.data[i][0];
-        if (lastData[0] == name) {
-          _addToken(new ParseErrorToken("duplicate-attribute"));
-          break;
-        }
+      if (_attributeNames == null) _attributeNames = new Set();
+      if (_attributeNames.contains(_attributeName)) {
+        _addToken(new ParseErrorToken("duplicate-attribute"));
       }
+      _attributeNames.add(_attributeName);
+
       // XXX Fix for above XXX
       if (emitToken) {
         emitCurrentToken();
@@ -1034,24 +1087,23 @@ class HtmlTokenizer implements Iterator<Token> {
     } else if (data == ">") {
       emitCurrentToken();
     } else if (isLetter(data)) {
-      currentToken.data.add([data, ""]);
+      _addAttribute(data);
       state = attributeNameState;
     } else if (data == "/") {
       state = selfClosingStartTagState;
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      currentToken.data.add(["\uFFFD", ""]);
+      _addAttribute("\uFFFD");
       state = attributeNameState;
     } else if (data == EOF) {
-      _addToken(new ParseErrorToken(
-          "expected-end-of-tag-but-got-eof"));
+      _addToken(new ParseErrorToken("expected-end-of-tag-but-got-eof"));
       state = dataState;
     } else if ("'\"<".contains(data)) {
       _addToken(new ParseErrorToken("invalid-character-after-attribute-name"));
-      currentToken.data.add([data, ""]);
+      _addAttribute(data);
       state = attributeNameState;
     } else {
-      currentToken.data.add([data, ""]);
+      _addAttribute(data);
       state = attributeNameState;
     }
     return true;
@@ -1062,11 +1114,14 @@ class HtmlTokenizer implements Iterator<Token> {
     if (isWhitespace(data)) {
       stream.charsUntil(spaceCharacters, true);
     } else if (data == "\"") {
+      _markAttributeValueStart(0);
       state = attributeValueDoubleQuotedState;
     } else if (data == "&") {
       state = attributeValueUnQuotedState;
       stream.unget(data);
+      _markAttributeValueStart(0);
     } else if (data == "'") {
+      _markAttributeValueStart(0);
       state = attributeValueSingleQuotedState;
     } else if (data == ">") {
       _addToken(new ParseErrorToken(
@@ -1074,19 +1129,20 @@ class HtmlTokenizer implements Iterator<Token> {
       emitCurrentToken();
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      lastData[1] = '${lastData[1]}\uFFFD';
+      _markAttributeValueStart(-1);
+      _attributeValue = '${_attributeValue}\uFFFD';
       state = attributeValueUnQuotedState;
     } else if (data == EOF) {
-      _addToken(new ParseErrorToken(
-          "expected-attribute-value-but-got-eof"));
+      _addToken(new ParseErrorToken("expected-attribute-value-but-got-eof"));
       state = dataState;
     } else if ("=<`".contains(data)) {
-      _addToken(new ParseErrorToken(
-          "equals-in-unquoted-attribute-value"));
-      lastData[1] = '${lastData[1]}${data}';
+      _addToken(new ParseErrorToken("equals-in-unquoted-attribute-value"));
+      _markAttributeValueStart(-1);
+      _attributeValue = '$_attributeValue$data';
       state = attributeValueUnQuotedState;
     } else {
-      lastData[1] = '${lastData[1]}${data}';
+      _markAttributeValueStart(-1);
+      _attributeValue = '$_attributeValue$data';
       state = attributeValueUnQuotedState;
     }
     return true;
@@ -1095,18 +1151,20 @@ class HtmlTokenizer implements Iterator<Token> {
   bool attributeValueDoubleQuotedState() {
     var data = stream.char();
     if (data == "\"") {
+      _markAttributeValueEnd(-1);
+      _markAttributeEnd(0);
       state = afterAttributeValueState;
     } else if (data == "&") {
       processEntityInAttribute('"');
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      lastData[1] = '${lastData[1]}\uFFFD';
+      _attributeValue = '${_attributeValue}\uFFFD';
     } else if (data == EOF) {
       _addToken(new ParseErrorToken("eof-in-attribute-value-double-quote"));
+      _markAttributeValueEnd(-1);
       state = dataState;
     } else {
-      lastData[1] = '${lastData[1]}${data}'
-          '${stream.charsUntil("\"&")}';
+      _attributeValue = '$_attributeValue$data${stream.charsUntil("\"&")}';
     }
     return true;
   }
@@ -1114,19 +1172,20 @@ class HtmlTokenizer implements Iterator<Token> {
   bool attributeValueSingleQuotedState() {
     var data = stream.char();
     if (data == "'") {
+      _markAttributeValueEnd(-1);
+      _markAttributeEnd(0);
       state = afterAttributeValueState;
     } else if (data == "&") {
       processEntityInAttribute("'");
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      lastData[1] = '${lastData[1]}\uFFFD';
+      _attributeValue = '${_attributeValue}\uFFFD';
     } else if (data == EOF) {
-      _addToken(new ParseErrorToken(
-          "eof-in-attribute-value-single-quote"));
+      _addToken(new ParseErrorToken("eof-in-attribute-value-single-quote"));
+      _markAttributeValueEnd(-1);
       state = dataState;
     } else {
-      lastData[1] = '${lastData[1]}${data}'
-          '${stream.charsUntil("\'&")}';
+      _attributeValue = '$_attributeValue$data${stream.charsUntil("\'&")}';
     }
     return true;
   }
@@ -1134,23 +1193,26 @@ class HtmlTokenizer implements Iterator<Token> {
   bool attributeValueUnQuotedState() {
     var data = stream.char();
     if (isWhitespace(data)) {
+      _markAttributeValueEnd(-1);
       state = beforeAttributeNameState;
     } else if (data == "&") {
       processEntityInAttribute(">");
     } else if (data == ">") {
+      _markAttributeValueEnd(-1);
       emitCurrentToken();
     } else if (data == EOF) {
-      _addToken(new ParseErrorToken(
-          "eof-in-attribute-value-no-quotes"));
+      _addToken(new ParseErrorToken("eof-in-attribute-value-no-quotes"));
+      _markAttributeValueEnd(-1);
       state = dataState;
     } else if ('"\'=<`'.contains(data)) {
-      _addToken(new ParseErrorToken("unexpected-character-in-unquoted-attribute-value"));
-      lastData[1] = '${lastData[1]}${data}';
+      _addToken(new ParseErrorToken(
+          "unexpected-character-in-unquoted-attribute-value"));
+      _attributeValue = '$_attributeValue$data';
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      lastData[1] = '${lastData[1]}\uFFFD';
+      _attributeValue = '${_attributeValue}\uFFFD';
     } else {
-      lastData[1] = '${lastData[1]}${data}'
+      _attributeValue = '$_attributeValue$data'
           '${stream.charsUntil("&>\"\'=<`$spaceCharacters")}';
     }
     return true;
@@ -1169,7 +1231,8 @@ class HtmlTokenizer implements Iterator<Token> {
       stream.unget(data);
       state = dataState;
     } else {
-      _addToken(new ParseErrorToken("unexpected-character-after-attribute-value"));
+      _addToken(new ParseErrorToken(
+          "unexpected-character-after-attribute-value"));
       stream.unget(data);
       state = beforeAttributeNameState;
     }
@@ -1194,7 +1257,8 @@ class HtmlTokenizer implements Iterator<Token> {
       stream.unget(data);
       state = dataState;
     } else {
-      _addToken(new ParseErrorToken("unexpected-character-after-soldius-in-tag"));
+      _addToken(new ParseErrorToken(
+          "unexpected-character-after-soldius-in-tag"));
       stream.unget(data);
       state = beforeAttributeNameState;
     }
@@ -1273,7 +1337,7 @@ class HtmlTokenizer implements Iterator<Token> {
       state = commentStartDashState;
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      currentToken.data = '${currentToken.data}\uFFFD';
+      currentStringToken.data = '${currentStringToken.data}\uFFFD';
     } else if (data == ">") {
       _addToken(new ParseErrorToken("incorrect-comment"));
       _addToken(currentToken);
@@ -1283,7 +1347,7 @@ class HtmlTokenizer implements Iterator<Token> {
       _addToken(currentToken);
       state = dataState;
     } else {
-      currentToken.data = '${currentToken.data}${data}';
+      currentStringToken.data = '${currentStringToken.data}$data';
       state = commentState;
     }
     return true;
@@ -1295,7 +1359,7 @@ class HtmlTokenizer implements Iterator<Token> {
       state = commentEndState;
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      currentToken.data = '${currentToken.data}-\uFFFD';
+      currentStringToken.data = '${currentStringToken.data}-\uFFFD';
     } else if (data == ">") {
       _addToken(new ParseErrorToken("incorrect-comment"));
       _addToken(currentToken);
@@ -1305,7 +1369,7 @@ class HtmlTokenizer implements Iterator<Token> {
       _addToken(currentToken);
       state = dataState;
     } else {
-      currentToken.data = '${currentToken.data}-${data}';
+      currentStringToken.data = '${currentStringToken.data}-${data}';
       state = commentState;
     }
     return true;
@@ -1317,13 +1381,13 @@ class HtmlTokenizer implements Iterator<Token> {
       state = commentEndDashState;
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      currentToken.data = '${currentToken.data}\uFFFD';
+      currentStringToken.data = '${currentStringToken.data}\uFFFD';
     } else if (data == EOF) {
       _addToken(new ParseErrorToken("eof-in-comment"));
       _addToken(currentToken);
       state = dataState;
     } else {
-      currentToken.data = '${currentToken.data}${data}'
+      currentStringToken.data = '${currentStringToken.data}$data'
           '${stream.charsUntil("-\u0000")}';
     }
     return true;
@@ -1335,14 +1399,14 @@ class HtmlTokenizer implements Iterator<Token> {
       state = commentEndState;
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      currentToken.data = "${currentToken.data}-\uFFFD";
+      currentStringToken.data = "${currentStringToken.data}-\uFFFD";
       state = commentState;
     } else if (data == EOF) {
       _addToken(new ParseErrorToken("eof-in-comment-end-dash"));
       _addToken(currentToken);
       state = dataState;
     } else {
-      currentToken.data = "${currentToken.data}-${data}";
+      currentStringToken.data = "${currentStringToken.data}-${data}";
       state = commentState;
     }
     return true;
@@ -1355,7 +1419,7 @@ class HtmlTokenizer implements Iterator<Token> {
       state = dataState;
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      currentToken.data = '${currentToken.data}--\uFFFD';
+      currentStringToken.data = '${currentStringToken.data}--\uFFFD';
       state = commentState;
     } else if (data == "!") {
       _addToken(new ParseErrorToken(
@@ -1364,7 +1428,7 @@ class HtmlTokenizer implements Iterator<Token> {
     } else if (data == "-") {
       _addToken(new ParseErrorToken(
           "unexpected-dash-after-double-dash-in-comment"));
-      currentToken.data = '${currentToken.data}${data}';
+      currentStringToken.data = '${currentStringToken.data}$data';
     } else if (data == EOF) {
       _addToken(new ParseErrorToken("eof-in-comment-double-dash"));
       _addToken(currentToken);
@@ -1372,7 +1436,7 @@ class HtmlTokenizer implements Iterator<Token> {
     } else {
       // XXX
       _addToken(new ParseErrorToken("unexpected-char-in-comment"));
-      currentToken.data = "${currentToken.data}--${data}";
+      currentStringToken.data = "${currentStringToken.data}--${data}";
       state = commentState;
     }
     return true;
@@ -1384,18 +1448,18 @@ class HtmlTokenizer implements Iterator<Token> {
       _addToken(currentToken);
       state = dataState;
     } else if (data == "-") {
-      currentToken.data = '${currentToken.data}--!';
+      currentStringToken.data = '${currentStringToken.data}--!';
       state = commentEndDashState;
     } else if (data == "\u0000") {
       _addToken(new ParseErrorToken("invalid-codepoint"));
-      currentToken.data = '${currentToken.data}--!\uFFFD';
+      currentStringToken.data = '${currentStringToken.data}--!\uFFFD';
       state = commentState;
     } else if (data == EOF) {
       _addToken(new ParseErrorToken("eof-in-comment-end-bang-state"));
       _addToken(currentToken);
       state = dataState;
     } else {
-      currentToken.data = "${currentToken.data}--!${data}";
+      currentStringToken.data = "${currentStringToken.data}--!${data}";
       state = commentState;
     }
     return true;
@@ -1466,7 +1530,7 @@ class HtmlTokenizer implements Iterator<Token> {
       _addToken(currentToken);
       state = dataState;
     } else {
-      currentDoctypeToken.name = '${currentDoctypeToken.name}${data}';
+      currentDoctypeToken.name = '${currentDoctypeToken.name}$data';
     }
     return true;
   }
@@ -1594,7 +1658,7 @@ class HtmlTokenizer implements Iterator<Token> {
       _addToken(currentToken);
       state = dataState;
     } else {
-      currentDoctypeToken.publicId = '${currentDoctypeToken.publicId}${data}';
+      currentDoctypeToken.publicId = '${currentDoctypeToken.publicId}$data';
     }
     return true;
   }
@@ -1617,7 +1681,7 @@ class HtmlTokenizer implements Iterator<Token> {
       _addToken(currentToken);
       state = dataState;
     } else {
-      currentDoctypeToken.publicId = '${currentDoctypeToken.publicId}${data}';
+      currentDoctypeToken.publicId = '${currentDoctypeToken.publicId}$data';
     }
     return true;
   }
@@ -1742,7 +1806,7 @@ class HtmlTokenizer implements Iterator<Token> {
       _addToken(currentToken);
       state = dataState;
     } else {
-      currentDoctypeToken.systemId = '${currentDoctypeToken.systemId}${data}';
+      currentDoctypeToken.systemId = '${currentDoctypeToken.systemId}$data';
     }
     return true;
   }
@@ -1765,7 +1829,7 @@ class HtmlTokenizer implements Iterator<Token> {
       _addToken(currentToken);
       state = dataState;
     } else {
-      currentDoctypeToken.systemId = '${currentDoctypeToken.systemId}${data}';
+      currentDoctypeToken.systemId = '${currentDoctypeToken.systemId}$data';
     }
     return true;
   }

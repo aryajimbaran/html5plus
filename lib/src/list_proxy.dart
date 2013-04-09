@@ -58,12 +58,7 @@ class ListProxy<E> extends Collection<E> implements List<E> {
   int lastIndexOf(E element, [int start]) => _list.lastIndexOf(element, start);
   void clear() { _list.clear(); }
 
-  E removeAt(int index) {
-    // TODO(jmesserly): removeAt not implemented on the VM?
-    var result = _list[index];
-    _list.removeRange(index, 1);
-    return result;
-  }
+  E removeAt(int index) => _list.removeAt(index);
   E removeLast() => _list.removeLast();
 
   List<E> sublist(int start, [int end]) => _list.sublist(start, end);

@@ -161,8 +161,10 @@ class HtmlParser {
       : generateSpans = generateSpans,
         tree = tree != null ? tree : new TreeBuilder(true),
         tokenizer = (input is HtmlTokenizer ? input :
-          new HtmlTokenizer(input, encoding, parseMeta, lowercaseElementName,
-            lowercaseAttrName, generateSpans, sourceUrl)) {
+          new HtmlTokenizer(input, encoding: encoding, parseMeta: parseMeta,
+            lowercaseElementName: lowercaseElementName,
+            lowercaseAttrName: lowercaseAttrName,
+            generateSpans: generateSpans, sourceUrl: sourceUrl)) {
 
     tokenizer.parser = this;
     _initialPhase = new InitialPhase(this);
@@ -317,7 +319,7 @@ class HtmlParser {
 
   void mainLoop() {
     while (tokenizer.moveNext()) {
-      var token = normalizeToken(tokenizer.current);
+      var token = tokenizer.current;
       var newToken = token;
       int type;
       while (newToken != null) {
@@ -401,14 +403,6 @@ class HtmlParser {
     if (strict) throw err;
   }
 
-  /** HTML5 specific normalizations to the token stream. */
-  Token normalizeToken(Token token) {
-    if (token is StartTagToken) {
-      token.data = makeDict(token.data);
-    }
-    return token;
-  }
-
   void adjustMathMLAttributes(StartTagToken token) {
     var orig = token.data.remove("definitionurl");
     if (orig != null) {
@@ -416,7 +410,7 @@ class HtmlParser {
     }
   }
 
-  void adjustSVGAttributes(Token token) {
+  void adjustSVGAttributes(StartTagToken token) {
     final replacements = const {
       "attributename":"attributeName",
       "attributetype":"attributeType",
@@ -489,7 +483,7 @@ class HtmlParser {
     }
   }
 
-  void adjustForeignAttributes(Token token) {
+  void adjustForeignAttributes(StartTagToken token) {
     // TODO(jmesserly): I don't like mixing non-string objects with strings in
     // the Node.attributes Map. Is there another solution?
     final replacements = const {
@@ -1017,7 +1011,7 @@ class InHeadPhase extends Phase {
   }
 
   void anythingElse() {
-    endTagHead(new EndTagToken("head", data: {}));
+    endTagHead(new EndTagToken("head"));
   }
 }
 
@@ -1280,7 +1274,7 @@ class InBodyPhase extends Phase {
     return false;
   }
 
-  void processSpaceCharactersDropNewline(Token token) {
+  void processSpaceCharactersDropNewline(StringToken token) {
     // Sometimes (start of <pre>, <listing>, and <textarea> blocks) we
     // want to drop leading newlines
     var data = token.data;
@@ -1357,14 +1351,14 @@ class InBodyPhase extends Phase {
 
   void startTagCloseP(StartTagToken token) {
     if (tree.elementInScope("p", variant: "button")) {
-      endTagP(new EndTagToken("p", data: {}));
+      endTagP(new EndTagToken("p"));
     }
     tree.insertElement(token);
   }
 
   void startTagPreListing(StartTagToken token) {
     if (tree.elementInScope("p", variant: "button")) {
-      endTagP(new EndTagToken("p", data: {}));
+      endTagP(new EndTagToken("p"));
     }
     tree.insertElement(token);
     parser.framesetOK = false;
@@ -1376,7 +1370,7 @@ class InBodyPhase extends Phase {
       parser.parseError(token.span, "unexpected-start-tag", {"name": "form"});
     } else {
       if (tree.elementInScope("p", variant: "button")) {
-        endTagP(new EndTagToken("p", data: {}));
+        endTagP(new EndTagToken("p"));
       }
       tree.insertElement(token);
       tree.formPointer = tree.openElements.last;
@@ -1392,7 +1386,7 @@ class InBodyPhase extends Phase {
     var stopNames = stopNamesMap[token.name];
     for (Node node in tree.openElements.reversed) {
       if (stopNames.contains(node.tagName)) {
-        parser.phase.processEndTag(new EndTagToken(node.tagName, data: {}));
+        parser.phase.processEndTag(new EndTagToken(node.tagName));
         break;
       }
       if (specialElements.contains(node.nameTuple) &&
@@ -1402,7 +1396,7 @@ class InBodyPhase extends Phase {
     }
 
     if (tree.elementInScope("p", variant: "button")) {
-      parser.phase.processEndTag(new EndTagToken("p", data: {}));
+      parser.phase.processEndTag(new EndTagToken("p"));
     }
 
     tree.insertElement(token);
@@ -1410,7 +1404,7 @@ class InBodyPhase extends Phase {
 
   void startTagPlaintext(StartTagToken token) {
     if (tree.elementInScope("p", variant: "button")) {
-      endTagP(new EndTagToken("p", data: {}));
+      endTagP(new EndTagToken("p"));
     }
     tree.insertElement(token);
     parser.tokenizer.state = parser.tokenizer.plaintextState;
@@ -1418,7 +1412,7 @@ class InBodyPhase extends Phase {
 
   void startTagHeading(StartTagToken token) {
     if (tree.elementInScope("p", variant: "button")) {
-      endTagP(new EndTagToken("p", data: {}));
+      endTagP(new EndTagToken("p"));
     }
     if (headingElements.contains(tree.openElements.last.tagName)) {
       parser.parseError(token.span, "unexpected-start-tag",
@@ -1433,7 +1427,7 @@ class InBodyPhase extends Phase {
     if (afeAElement != null) {
       parser.parseError(token.span, "unexpected-start-tag-implies-end-tag",
           {"startName": "a", "endName": "a"});
-      endTagFormatting(new EndTagToken("a", data: {}));
+      endTagFormatting(new EndTagToken("a"));
       tree.openElements.remove(afeAElement);
       tree.activeFormattingElements.remove(afeAElement);
     }
@@ -1451,7 +1445,7 @@ class InBodyPhase extends Phase {
     if (tree.elementInScope("nobr")) {
       parser.parseError(token.span, "unexpected-start-tag-implies-end-tag",
         {"startName": "nobr", "endName": "nobr"});
-      processEndTag(new EndTagToken("nobr", data: {}));
+      processEndTag(new EndTagToken("nobr"));
       // XXX Need tests that trigger the following
       tree.reconstructActiveFormattingElements();
     }
@@ -1462,7 +1456,7 @@ class InBodyPhase extends Phase {
     if (tree.elementInScope("button")) {
       parser.parseError(token.span, "unexpected-start-tag-implies-end-tag",
         {"startName": "button", "endName": "button"});
-      processEndTag(new EndTagToken("button", data: {}));
+      processEndTag(new EndTagToken("button"));
       return token;
     } else {
       tree.reconstructActiveFormattingElements();
@@ -1480,7 +1474,7 @@ class InBodyPhase extends Phase {
 
   void startTagXmp(StartTagToken token) {
     if (tree.elementInScope("p", variant: "button")) {
-      endTagP(new EndTagToken("p", data: {}));
+      endTagP(new EndTagToken("p"));
     }
     tree.reconstructActiveFormattingElements();
     parser.framesetOK = false;
@@ -1490,7 +1484,7 @@ class InBodyPhase extends Phase {
   void startTagTable(StartTagToken token) {
     if (parser.compatMode != "quirks") {
       if (tree.elementInScope("p", variant: "button")) {
-        processEndTag(new EndTagToken("p", data: {}));
+        processEndTag(new EndTagToken("p"));
       }
     }
     tree.insertElement(token);
@@ -1523,7 +1517,7 @@ class InBodyPhase extends Phase {
 
   void startTagHr(StartTagToken token) {
     if (tree.elementInScope("p", variant: "button")) {
-      endTagP(new EndTagToken("p", data: {}));
+      endTagP(new EndTagToken("p"));
     }
     tree.insertElement(token);
     tree.openElements.removeLast();
@@ -1564,9 +1558,9 @@ class InBodyPhase extends Phase {
     attributes["name"] = "isindex";
     processStartTag(new StartTagToken("input",
                     data: attributes, selfClosing: token.selfClosing));
-    processEndTag(new EndTagToken("label", data: {}));
+    processEndTag(new EndTagToken("label"));
     processStartTag(new StartTagToken("hr", data: {}));
-    processEndTag(new EndTagToken("form", data: {}));
+    processEndTag(new EndTagToken("form"));
   }
 
   void startTagTextarea(StartTagToken token) {
@@ -1588,7 +1582,7 @@ class InBodyPhase extends Phase {
 
   void startTagOpt(StartTagToken token) {
     if (tree.openElements.last.tagName == "option") {
-      parser.phase.processEndTag(new EndTagToken("option", data: {}));
+      parser.phase.processEndTag(new EndTagToken("option"));
     }
     tree.reconstructActiveFormattingElements();
     parser.tree.insertElement(token);
@@ -1671,7 +1665,7 @@ class InBodyPhase extends Phase {
     if (!tree.elementInScope("p", variant: "button")) {
       startTagCloseP(new StartTagToken("p", data: {}));
       parser.parseError(token.span, "unexpected-end-tag", {"name": "p"});
-      endTagP(new EndTagToken("p", data: {}));
+      endTagP(new EndTagToken("p"));
     } else {
       tree.generateImpliedEndTags("p");
       if (tree.openElements.last.tagName != "p") {
@@ -1705,7 +1699,7 @@ class InBodyPhase extends Phase {
   Token endTagHtml(EndTagToken token) {
     //We repeat the test for the body end tag token being ignored here
     if (tree.elementInScope("body")) {
-      endTagBody(new EndTagToken("body", data: {}));
+      endTagBody(new EndTagToken("body"));
       return token;
     }
   }
@@ -2114,7 +2108,7 @@ class InTablePhase extends Phase {
   Token startTagTable(StartTagToken token) {
     parser.parseError(token.span, "unexpected-start-tag-implies-end-tag",
         {"startName": "table", "endName": "table"});
-    parser.phase.processEndTag(new EndTagToken("table", data: {}));
+    parser.phase.processEndTag(new EndTagToken("table"));
     if (!parser.innerHTMLMode) {
       return token;
     }
@@ -2297,7 +2291,7 @@ class InCaptionPhase extends Phase {
     parser.parseError(token.span, "undefined-error");
     //XXX Have to duplicate logic here to find out if the tag is ignored
     var ignoreEndTag = ignoreEndTagCaption();
-    parser.phase.processEndTag(new EndTagToken("caption", data: {}));
+    parser.phase.processEndTag(new EndTagToken("caption"));
     if (!ignoreEndTag) {
       return token;
     }
@@ -2333,7 +2327,7 @@ class InCaptionPhase extends Phase {
   Token endTagTable(EndTagToken token) {
     parser.parseError(token.span, "undefined-error");
     var ignoreEndTag = ignoreEndTagCaption();
-    parser.phase.processEndTag(new EndTagToken("caption", data: {}));
+    parser.phase.processEndTag(new EndTagToken("caption"));
     if (!ignoreEndTag) {
       return token;
     }
@@ -2380,14 +2374,14 @@ class InColumnGroupPhase extends Phase {
       assert(parser.innerHTMLMode);
       return false;
     } else {
-      endTagColgroup(new EndTagToken("colgroup", data: {}));
+      endTagColgroup(new EndTagToken("colgroup"));
       return true;
     }
   }
 
   Token processCharacters(CharactersToken token) {
     var ignoreEndTag = ignoreEndTagColgroup();
-    endTagColgroup(new EndTagToken("colgroup", data: {}));
+    endTagColgroup(new EndTagToken("colgroup"));
     return ignoreEndTag ? null : token;
   }
 
@@ -2398,7 +2392,7 @@ class InColumnGroupPhase extends Phase {
 
   Token startTagOther(StartTagToken token) {
     var ignoreEndTag = ignoreEndTagColgroup();
-    endTagColgroup(new EndTagToken("colgroup", data: {}));
+    endTagColgroup(new EndTagToken("colgroup"));
     return ignoreEndTag ? null : token;
   }
 
@@ -2419,7 +2413,7 @@ class InColumnGroupPhase extends Phase {
 
   Token endTagOther(EndTagToken token) {
     var ignoreEndTag = ignoreEndTagColgroup();
-    endTagColgroup(new EndTagToken("colgroup", data: {}));
+    endTagColgroup(new EndTagToken("colgroup"));
     return ignoreEndTag ? null : token;
   }
 }
@@ -2516,8 +2510,7 @@ class InTableBodyPhase extends Phase {
         tree.elementInScope("thead", variant: "table") ||
         tree.elementInScope("tfoot", variant: "table")) {
       clearStackToTableBodyContext();
-      endTagTableRowGroup(
-          new EndTagToken(tree.openElements.last.tagName, data: {}));
+      endTagTableRowGroup(new EndTagToken(tree.openElements.last.tagName));
       return token;
     } else {
       // innerHTML case
@@ -2606,7 +2599,7 @@ class InRowPhase extends Phase {
 
   Token startTagTableOther(StartTagToken token) {
     bool ignoreEndTag = ignoreEndTagTr();
-    endTagTr(new EndTagToken("tr", data: {}));
+    endTagTr(new EndTagToken("tr"));
     // XXX how are we sure it's always ignored in the innerHTML case?
     return ignoreEndTag ? null : token;
   }
@@ -2629,7 +2622,7 @@ class InRowPhase extends Phase {
 
   Token endTagTable(EndTagToken token) {
     var ignoreEndTag = ignoreEndTagTr();
-    endTagTr(new EndTagToken("tr", data: {}));
+    endTagTr(new EndTagToken("tr"));
     // Reprocess the current tag if the tr end tag was not ignored
     // XXX how are we sure it's always ignored in the innerHTML case?
     return ignoreEndTag ? null : token;
@@ -2637,7 +2630,7 @@ class InRowPhase extends Phase {
 
   Token endTagTableRowGroup(EndTagToken token) {
     if (tree.elementInScope(token.name, variant: "table")) {
-      endTagTr(new EndTagToken("tr", data: {}));
+      endTagTr(new EndTagToken("tr"));
       return token;
     } else {
       parser.parseError(token.span, "undefined-error");
@@ -2684,9 +2677,9 @@ class InCellPhase extends Phase {
   // helper
   void closeCell() {
     if (tree.elementInScope("td", variant: "table")) {
-      endTagTableCell(new EndTagToken("td", data: {}));
+      endTagTableCell(new EndTagToken("td"));
     } else if (tree.elementInScope("th", variant: "table")) {
-      endTagTableCell(new EndTagToken("th", data: {}));
+      endTagTableCell(new EndTagToken("th"));
     }
   }
 
@@ -2815,13 +2808,13 @@ class InSelectPhase extends Phase {
 
   void startTagSelect(StartTagToken token) {
     parser.parseError(token.span, "unexpected-select-in-select");
-    endTagSelect(new EndTagToken("select", data: {}));
+    endTagSelect(new EndTagToken("select"));
   }
 
   Token startTagInput(StartTagToken token) {
     parser.parseError(token.span, "unexpected-input-in-select");
     if (tree.elementInScope("select", variant: "select")) {
-      endTagSelect(new EndTagToken("select", data: {}));
+      endTagSelect(new EndTagToken("select"));
       return token;
     } else {
       assert(parser.innerHTMLMode);
@@ -2914,7 +2907,7 @@ class InSelectInTablePhase extends Phase {
     parser.parseError(token.span,
         "unexpected-table-element-start-tag-in-select-in-table",
         {"name": token.name});
-    endTagOther(new EndTagToken("select", data: {}));
+    endTagOther(new EndTagToken("select"));
     return token;
   }
 
@@ -2927,7 +2920,7 @@ class InSelectInTablePhase extends Phase {
         "unexpected-table-element-end-tag-in-select-in-table",
         {"name": token.name});
     if (tree.elementInScope(token.name, variant: "table")) {
-      endTagOther(new EndTagToken("select", data: {}));
+      endTagOther(new EndTagToken("select"));
       return token;
     }
   }

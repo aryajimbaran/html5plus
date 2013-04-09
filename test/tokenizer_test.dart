@@ -26,7 +26,7 @@ class TokenizerTestParser {
   List parse(String str) {
     // Note: we need to pass bytes to the tokenizer if we want it to handle BOM.
     var bytes = codepointsToUtf8(toCodepoints(str));
-    var tokenizer = new HtmlTokenizer(bytes, 'utf-8');
+    var tokenizer = new HtmlTokenizer(bytes, encoding: 'utf-8');
     outputTokens = [];
 
     // Note: we can't get a closure of the state method. However, we can
@@ -75,30 +75,29 @@ class TokenizerTestParser {
   }
 
   void processStartTag(StartTagToken token) {
-    outputTokens.add(["StartTag", token.name,
-        makeDict(token.data), token.selfClosing]);
+    outputTokens.add(["StartTag", token.name, token.data, token.selfClosing]);
   }
 
   void processEndTag(EndTagToken token) {
     outputTokens.add(["EndTag", token.name, token.selfClosing]);
   }
 
-  void processComment(Token token) {
+  void processComment(StringToken token) {
     outputTokens.add(["Comment", token.data]);
   }
 
-  void processSpaceCharacters(Token token) {
+  void processSpaceCharacters(StringToken token) {
     processCharacters(token);
   }
 
-  void processCharacters(Token token) {
+  void processCharacters(StringToken token) {
     outputTokens.add(["Character", token.data]);
   }
 
   void processEOF(token) {
   }
 
-  void processParseError(Token token) {
+  void processParseError(StringToken token) {
     // TODO(jmesserly): when debugging test failures it can be useful to add
     // logging here like `print('ParseError $token');`. It would be nice to
     // use the actual logging library.
