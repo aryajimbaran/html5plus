@@ -2,7 +2,7 @@ library inputstream;
 
 import 'dart:collection';
 import 'dart:utf';
-import 'package:source_maps/span.dart' show File;
+import 'package:source_maps/span.dart' show SourceFile;
 import 'char_encodings.dart';
 import 'constants.dart';
 import 'utils.dart';
@@ -53,7 +53,7 @@ class HtmlInputStream {
 
   Queue<String> errors;
 
-  File fileInfo;
+  SourceFile fileInfo;
 
   List<int> _lineStarts;
 
@@ -144,7 +144,8 @@ class HtmlInputStream {
     // Free decoded characters if they aren't needed anymore.
     if (_rawBytes != null) _rawChars = null;
 
-    fileInfo = new File(sourceUrl, _lineStarts, generateSpans ? _chars : null);
+    fileInfo = new SourceFile(sourceUrl, _lineStarts,
+        generateSpans ? _chars : null);
   }
 
 

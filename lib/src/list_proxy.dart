@@ -7,9 +7,9 @@ library list_proxy;
 import 'package:meta/meta.dart';
 
 // TODO(jmesserly): this should extend the base list.
-// See http://code.google.com/p/dart/issues/detail?id=949
+// See http://code.google.com/p/dart/issues/detail?id=2600
 /** A [List<T>] proxy that you can subclass. */
-class ListProxy<E> extends Collection<E> implements List<E> {
+class ListProxy<E> extends Iterable<E> implements List<E> {
 
   /** The inner [List<T>] with the actual storage. */
   final List<E> _list;
@@ -61,11 +61,12 @@ class ListProxy<E> extends Collection<E> implements List<E> {
   E removeAt(int index) => _list.removeAt(index);
   E removeLast() => _list.removeLast();
 
+  void removeWhere(bool test(E element)) => _list.removeWhere(test);
+  void retainWhere(bool test(E element)) => _list.retainWhere(test);
+
   List<E> sublist(int start, [int end]) => _list.sublist(start, end);
 
-  @deprecated
-  List<E> getRange(int start, int length) =>
-    _list.sublist(start, start + length);
+  List<E> getRange(int start, int end) => _list.getRange(start, end);
 
   void setRange(int start, int length, List<E> from, [int startFrom]) {
     _list.setRange(start, length, from, startFrom);

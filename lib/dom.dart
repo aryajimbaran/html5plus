@@ -680,6 +680,20 @@ class NodeList extends ListProxy<Node> {
     super.removeRange(start, rangeLength);
   }
 
+  void removeWhere(bool test(Element e)) {
+    for (var node in where(test)) {
+      node.parent = null;
+    }
+    super.removeWhere(test);
+  }
+
+  void retainWhere(bool test(Element e)) {
+    for (var node in where((n) => !test(n))) {
+      node.parent = null;
+    }
+    super.retainWhere(test);
+  }
+
   void insertRange(int start, int rangeLength, [Node initialValue]) {
     if (initialValue == null) {
       throw new ArgumentError('cannot add null node.');
@@ -692,8 +706,8 @@ class NodeList extends ListProxy<Node> {
 }
 
 // TODO(jmesserly): this was copied from dart:html
-// I fixed this to extend Collection and implement removeAt and first.
-class FilteredElementList extends Collection<Element> implements List<Element> {
+// I fixed this to extend Iterable and implement removeAt and first.
+class FilteredElementList extends Iterable<Element> implements List<Element> {
   final Node _node;
   final List<Node> _childNodes;
 
@@ -756,6 +770,14 @@ class FilteredElementList extends Collection<Element> implements List<Element> {
     _filtered.sublist(start, start + rangeLength).forEach((el) => el.remove());
   }
 
+  void removeWhere(bool test(Element e)) {
+    _filtered.where(test).forEach((el) => el.remove());
+  }
+
+  void retainWhere(bool test(Element e)) {
+    _filtered.where((n) => !test(n)).forEach((el) => el.remove());
+  }
+
   void insertRange(int start, int rangeLength, [initialValue = null]) {
     throw new UnimplementedError();
   }
@@ -774,10 +796,12 @@ class FilteredElementList extends Collection<Element> implements List<Element> {
     return result;
   }
 
-  void remove(Element value) {
-    if (_childNodes.contains(value)) {
-      value.remove();
+  bool remove(Object value) {
+    if (value is Element && _childNodes.contains(value)) {
+      (value as Element).remove();
+      return true;
     }
+    return false;
   }
 
   Element removeAt(int index) => this[index]..remove();
@@ -785,11 +809,8 @@ class FilteredElementList extends Collection<Element> implements List<Element> {
   Iterator<Element> get iterator => _filtered.iterator;
   Element operator [](int index) => _filtered[index];
 
+  List<Element> getRange(int start, int end) => _filtered.getRange(start, end);
   List<Element> sublist(int start, [int end]) => _filtered.sublist(start, end);
-
-  @deprecated
-  List<Element> getRange(int start, int rangeLength) =>
-    _filtered.sublist(start, start + rangeLength);
 
   int indexOf(Element element, [int start = 0]) =>
     _filtered.indexOf(element, start);
