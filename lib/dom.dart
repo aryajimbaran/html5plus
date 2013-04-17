@@ -595,7 +595,7 @@ class ProcessingInstruction extends Node {
   int get nodeType => Node.PROCESSING_INSTRUCTION_NODE;
 
   void _addOuterHtml(StringBuffer str) {
-    str.add("<?$target $data?>");
+    str.write("<?$target $data?>");
   }
 
   ProcessingInstruction clone() => new ProcessingInstruction(target, data);
