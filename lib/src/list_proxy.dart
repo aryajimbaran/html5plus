@@ -4,12 +4,10 @@
 /** A [List] proxy that you can subclass. */
 library list_proxy;
 
-import 'package:meta/meta.dart';
+import 'dart:collection';
 
-// TODO(jmesserly): this should extend the base list.
-// See http://code.google.com/p/dart/issues/detail?id=2600
-/** A [List<T>] proxy that you can subclass. */
-class ListProxy<E> extends Iterable<E> implements List<E> {
+// TOOD(jmesserly): this needs to be removed, but fixing NodeList is tricky.
+class ListProxy<E> extends IterableBase<E> implements List<E> {
 
   /** The inner [List<T>] with the actual storage. */
   final List<E> _list;
@@ -68,15 +66,23 @@ class ListProxy<E> extends Iterable<E> implements List<E> {
 
   List<E> getRange(int start, int end) => _list.getRange(start, end);
 
-  void setRange(int start, int length, List<E> from, [int startFrom]) {
+  void setRange(int start, int length, List<E> from, [int startFrom = 0]) {
     _list.setRange(start, length, from, startFrom);
   }
   void removeRange(int start, int length) { _list.removeRange(start, length); }
-  void insertRange(int start, int length, [E initialValue]) {
-    _list.insertRange(start, length, initialValue);
+  void insertAll(int index, Iterable<E> iterable) {
+    _list.insertAll(index, iterable);
   }
 
   Iterable<E> get reversed => _list.reversed;
 
   Map<int, E> asMap() => _list.asMap();
+
+  void replaceRange(int start, int end, Iterable<E> newContents) =>
+      _list.replaceRange(start, end, newContents);
+
+  void setAll(int index, Iterable<E> iterable) => _list.setAll(index, iterable);
+
+  void fillRange(int start, int end, [E fillValue])
+      => _list.fillRange(start, end, fillValue);
 }

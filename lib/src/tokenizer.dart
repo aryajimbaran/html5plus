@@ -173,7 +173,7 @@ class HtmlTokenizer implements Iterator<Token> {
         _lastOffset = offset;
       }
     }
-    tokenQueue.addLast(token);
+    tokenQueue.add(token);
   }
 
   /**

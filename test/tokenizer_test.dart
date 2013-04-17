@@ -33,7 +33,7 @@ class TokenizerTestParser {
     // create a new closure to invoke it via mirrors.
     var mtok = reflect(tokenizer);
     tokenizer.state = () => deprecatedFutureValue(
-        mtok.invokeAsync(_state, const [])).reflectee;
+        mtok.invokeAsync(new Symbol(_state), const [])).reflectee;
 
     if (_lastStartTag != null) {
       tokenizer.currentToken = new StartTagToken(_lastStartTag);

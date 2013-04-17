@@ -1,6 +1,7 @@
 /** Decodes bytes using the correct name. See [decodeBytes]. */
 library char_encodings;
 
+import 'dart:collection';
 import 'dart:utf';
 
 // TODO(jmesserly): this function is conspicuously absent from dart:utf.
@@ -120,7 +121,7 @@ IterableWindows1252Decoder decodeWindows1252AsIterable(List<int> bytes,
  * provides an iterator on demand and the iterator will only translate bytes
  * as requested by the user of the iterator. (Note: results are not cached.)
  */
-class IterableWindows1252Decoder extends Iterable<int> {
+class IterableWindows1252Decoder extends IterableBase<int> {
   final List<int> bytes;
   final int offset;
   final int length;

@@ -14,10 +14,14 @@ import 'utils.dart';
 // from "leaking" into tables, object elements, and marquees.
 final Node Marker = null;
 
+// TODO(jmesserly): this should extend ListBase<Node>, but my simple attempt
+// didn't work.
 class ActiveFormattingElements extends ListProxy<Node> {
   ActiveFormattingElements() : super();
 
-  void addLast(Node node) => add(node);
+  // Override the "add" method.
+  // TODO(jmesserly): I'd rather not override this; can we do this in the
+  // calling code instead?
   void add(Node node) {
     int equalCount = 0;
     if (node != Marker) {
@@ -68,10 +72,9 @@ class TreeBuilder {
 
   Document document;
 
-  final ListProxy<Node> openElements = new ListProxy<Node>();
+  final openElements = <Node>[];
 
-  final ActiveFormattingElements activeFormattingElements
-      = new ActiveFormattingElements();
+  final activeFormattingElements = new ActiveFormattingElements();
 
   Node headPointer;
 

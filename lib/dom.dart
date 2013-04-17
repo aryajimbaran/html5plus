@@ -5,7 +5,6 @@
 library dom;
 
 import 'dart:collection';
-import 'package:meta/meta.dart';
 import 'package:source_maps/span.dart' show FileSpan;
 
 import 'src/constants.dart';
@@ -604,6 +603,8 @@ class ProcessingInstruction extends Node {
   String toString() => "<?$target $data?>";
 }
 
+// TODO(jmesserly): fix this to extend one of the corelib classes if possible.
+// (The requirement to remove the node from the old node list makes it tricky.)
 // TODO(jmesserly): is there any way to share code with the _NodeListImpl?
 class NodeList extends ListProxy<Node> {
   // Note: this is conceptually final, but because of circular reference
@@ -675,6 +676,11 @@ class NodeList extends ListProxy<Node> {
     }
   }
 
+  void replaceRange(int start, int end, Iterable<Node> newContents) {
+    removeRange(start, end);
+    insertAll(start, newContents);
+  }
+
   void removeRange(int start, int rangeLength) {
     for (int i = start; i < rangeLength; i++) this[i].parent = null;
     super.removeRange(start, rangeLength);
@@ -694,29 +700,45 @@ class NodeList extends ListProxy<Node> {
     super.retainWhere(test);
   }
 
-  void insertRange(int start, int rangeLength, [Node initialValue]) {
-    if (initialValue == null) {
-      throw new ArgumentError('cannot add null node.');
-    }
-    if (rangeLength > 1) {
-      throw new UnsupportedError('cannot add the same node multiple times.');
-    }
-    super.insertRange(start, 1, _setParent(initialValue));
+  void insertAll(int index, List<Node> nodes) {
+    for (var node in nodes) _setParent(node);
+    super.insertAll(index, nodes);
   }
 }
 
+/**
+ * An indexable collection of a node's descendants in the document tree,
+ * filtered so that only elements are in the collection.
+ */
 // TODO(jmesserly): this was copied from dart:html
-// I fixed this to extend Iterable and implement removeAt and first.
-class FilteredElementList extends Iterable<Element> implements List<Element> {
+// TODO(jmesserly): "implements List<Element>" is a workaround for analyzer bug.
+class FilteredElementList extends IterableBase<Element> with ListMixin<Element>
+    implements List<Element> {
+
   final Node _node;
   final List<Node> _childNodes;
 
+  /**
+   * Creates a collection of the elements that descend from a node.
+   *
+   * Example usage:
+   *
+   *     var filteredElements = new FilteredElementList(query("#container"));
+   *     // filteredElements is [a, b, c].
+   */
   FilteredElementList(Node node): _childNodes = node.nodes, _node = node;
 
   // We can't memoize this, since it's possible that children will be messed
   // with externally to this class.
+  //
+  // TODO(nweiz): we don't always need to create a new list. For example
+  // forEach, every, any, ... could directly work on the _childNodes.
   List<Element> get _filtered =>
-      new List<Element>.from(_childNodes.where((n) => n is Element));
+    new List<Element>.from(_childNodes.where((n) => n is Element));
+
+  void forEach(void f(Element element)) {
+    _filtered.forEach(f);
+  }
 
   void operator []=(int index, Element value) {
     this[index].replaceWith(value);
@@ -730,23 +752,19 @@ class FilteredElementList extends Iterable<Element> implements List<Element> {
       throw new ArgumentError("Invalid list length");
     }
 
-    removeRange(newLength, len - newLength);
+    removeRange(newLength, len);
   }
+
+  String join([String separator = ""]) => _filtered.join(separator);
 
   void add(Element value) {
     _childNodes.add(value);
   }
 
-  void addAll(Iterable<Element> collection) {
-    collection.forEach(add);
-  }
-
-  void addLast(Element value) {
-    add(value);
-  }
-
-  void insert(int index, Element value) {
-    throw new UnimplementedError();
+  void addAll(Iterable<Element> iterable) {
+    for (Element element in iterable) {
+      add(element);
+    }
   }
 
   bool contains(Element element) {
@@ -755,31 +773,25 @@ class FilteredElementList extends Iterable<Element> implements List<Element> {
 
   Iterable<Element> get reversed => _filtered.reversed;
 
-  Map<int, Element> asMap() => _filtered.asMap();
-
   void sort([int compare(Element a, Element b)]) {
-    // TODO(jacobr): should we impl?
+    throw new UnsupportedError('TODO(jacobr): should we impl?');
+  }
+
+  void setRange(int start, int end, Iterable<Element> iterable,
+                [int skipCount = 0]) {
     throw new UnimplementedError();
   }
 
-  void setRange(int start, int rangeLength, List from, [int startFrom = 0]) {
+  void fillRange(int start, int end, [Element fillValue]) {
     throw new UnimplementedError();
   }
 
-  void removeRange(int start, int rangeLength) {
-    _filtered.sublist(start, start + rangeLength).forEach((el) => el.remove());
-  }
-
-  void removeWhere(bool test(Element e)) {
-    _filtered.where(test).forEach((el) => el.remove());
-  }
-
-  void retainWhere(bool test(Element e)) {
-    _filtered.where((n) => !test(n)).forEach((el) => el.remove());
-  }
-
-  void insertRange(int start, int rangeLength, [initialValue = null]) {
+  void replaceRange(int start, int end, Iterable<Element> iterable) {
     throw new UnimplementedError();
+  }
+
+  void removeRange(int start, int end) {
+    _filtered.sublist(start, end).forEach((el) => el.remove());
   }
 
   void clear() {
@@ -796,27 +808,85 @@ class FilteredElementList extends Iterable<Element> implements List<Element> {
     return result;
   }
 
-  bool remove(Object value) {
-    if (value is Element && _childNodes.contains(value)) {
-      (value as Element).remove();
-      return true;
+  Iterable map(f(Element element)) => _filtered.map(f);
+  Iterable<Element> where(bool f(Element element)) => _filtered.where(f);
+  Iterable expand(Iterable f(Element element)) => _filtered.expand(f);
+
+  void insert(int index, Element value) {
+    _childNodes.insert(index, value);
+  }
+
+  void insertAll(int index, Iterable<Element> iterable) {
+    _childNodes.insertAll(index, iterable);
+  }
+
+  Element removeAt(int index) {
+    final result = this[index];
+    result.remove();
+    return result;
+  }
+
+  bool remove(Object element) {
+    if (element is! Element) return false;
+    for (int i = 0; i < length; i++) {
+      Element indexElement = this[i];
+      if (identical(indexElement, element)) {
+        indexElement.remove();
+        return true;
+      }
     }
     return false;
   }
 
-  Element removeAt(int index) => this[index]..remove();
+  Element reduce(Element combine(Element value, Element element)) {
+    return _filtered.reduce(combine);
+  }
 
-  Iterator<Element> get iterator => _filtered.iterator;
+  dynamic fold(dynamic initialValue,
+      dynamic combine(dynamic previousValue, Element element)) {
+    return _filtered.fold(initialValue, combine);
+  }
+
+  bool every(bool f(Element element)) => _filtered.every(f);
+  bool any(bool f(Element element)) => _filtered.any(f);
+  List<Element> toList({ bool growable: true }) =>
+      new List<Element>.from(this, growable: growable);
+  Set<Element> toSet() => new Set<Element>.from(this);
+  Element firstWhere(bool test(Element value), {Element orElse()}) {
+    return _filtered.firstWhere(test, orElse: orElse);
+  }
+
+  Element lastWhere(bool test(Element value), {Element orElse()}) {
+    return _filtered.lastWhere(test, orElse: orElse);
+  }
+
+  Element singleWhere(bool test(Element value)) {
+    return _filtered.singleWhere(test);
+  }
+
+  Element elementAt(int index) {
+    return this[index];
+  }
+
+  bool get isEmpty => _filtered.isEmpty;
+  int get length => _filtered.length;
   Element operator [](int index) => _filtered[index];
-
-  List<Element> getRange(int start, int end) => _filtered.getRange(start, end);
-  List<Element> sublist(int start, [int end]) => _filtered.sublist(start, end);
-
+  Iterator<Element> get iterator => _filtered.iterator;
+  List<Element> sublist(int start, [int end]) =>
+    _filtered.sublist(start, end);
+  Iterable<Element> getRange(int start, int end) =>
+    _filtered.getRange(start, end);
   int indexOf(Element element, [int start = 0]) =>
     _filtered.indexOf(element, start);
 
-  int lastIndexOf(Element element, [int start]) {
+  int lastIndexOf(Element element, [int start = null]) {
     if (start == null) start = length - 1;
     return _filtered.lastIndexOf(element, start);
   }
+
+  Element get first => _filtered.first;
+
+  Element get last => _filtered.last;
+
+  Element get single => _filtered.single;
 }

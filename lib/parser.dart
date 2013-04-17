@@ -1909,13 +1909,13 @@ class InBodyPhase extends Phase {
 
       // Step 11
       tree.activeFormattingElements.remove(formattingElement);
-      tree.activeFormattingElements.insertRange(
-          min(bookmark, tree.activeFormattingElements.length), 1, clone);
+      tree.activeFormattingElements.insert(
+          min(bookmark, tree.activeFormattingElements.length), clone);
 
       // Step 12
       tree.openElements.remove(formattingElement);
-      tree.openElements.insertRange(
-          tree.openElements.indexOf(furthestBlock) + 1, 1, clone);
+      tree.openElements.insert(
+          tree.openElements.indexOf(furthestBlock) + 1, clone);
     }
   }
 

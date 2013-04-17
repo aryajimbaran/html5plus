@@ -1,5 +1,6 @@
 library encoding_parser;
 
+import 'dart:collection';
 import 'constants.dart';
 import 'inputstream.dart';
 import 'utils.dart';
@@ -11,7 +12,7 @@ import 'utils.dart';
  * If the position is ever greater than the string length then an exception is
  * raised.
  */
-class EncodingBytes extends Iterable<String> {
+class EncodingBytes extends IterableBase<String> {
   final String _bytes;
   int _position = -1;
 
