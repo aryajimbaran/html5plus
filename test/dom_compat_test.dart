@@ -13,7 +13,7 @@ main() {
 
   registerDomCompatTests();
 
-  test('DumpRenderTree', () {
+  test('content_shell', () {
     _runDrt('test/browser/browser_tests.html');
   });
 }
@@ -21,7 +21,7 @@ main() {
 void _runDrt(String htmlFile) {
   final allPassedRegExp = new RegExp('All \\d+ tests passed');
 
-  final future = Process.run('DumpRenderTree', [htmlFile])
+  final future = Process.run('content_shell', ['--dump-render-tree', htmlFile])
     .then((ProcessResult pr) {
       expect(pr.exitCode, 0);
       expect(pr.stdout, matches(allPassedRegExp), reason: pr.stdout);
