@@ -3,6 +3,8 @@ library support;
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:collection';
+import 'package:path/path.dart' as pathos;
 import 'package:html5plus/src/treebuilder.dart';
 import 'package:html5plus/dom.dart';
 import 'package:html5plus/dom_parsing.dart';
@@ -18,16 +20,16 @@ Map<String, TreeBuilderFactory> get treeTypes {
   return _treeTypes;
 }
 
-String testDataDir = 'test/data';
+const testDataDir = 'test/data';
 
 Iterable<String> getDataFiles(String subdirectory) {
-  var dir = new Directory.fromPath(new Path('$testDataDir/$subdirectory'));
+  var dir = new Directory(pathos.join(testDataDir, subdirectory));
   return dir.listSync().where((f) => f is File).map((f) => f.path);
 }
 
 // TODO(jmesserly): make this class simpler. We could probably split on
 // "\n#" instead of newline and remove a lot of code.
-class TestData extends Iterable<Map> {
+class TestData extends IterableBase<Map> {
   final String _text;
   final String newTestHeading;
 

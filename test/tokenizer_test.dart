@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:json' as json;
 import 'dart:mirrors';
 import 'dart:utf';
+import 'package:path/path.dart' as pathos;
 import 'package:unittest/unittest.dart';
 import 'package:html5plus/src/char_encodings.dart';
 import 'package:html5plus/src/constants.dart' as constants;
@@ -248,7 +249,7 @@ void main() {
 
     var text = new File(path).readAsStringSync();
     var tests = json.parse(text);
-    var testName = new Path(path).filename.replaceAll(".test","");
+    var testName = pathos.basenameWithoutExtension(path);
     var testList = tests['tests'];
     if (testList == null) continue;
 

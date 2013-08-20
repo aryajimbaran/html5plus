@@ -1,14 +1,15 @@
 name: html5plus
+version: 0.4.4
 authors:
 - Dart Team <misc@dartlang.org>
 - Tom Yeh <tomyeh@rikulo.org>
-homepage: https://github.com/tomyeh/html5plus
 description: A fork of html5lib for working with HTML and XML documents.
-version: 0.4.3
-dependencies:
-  source_maps: ">=0.4.5"
-dev_dependencies:
-  browser: any
-  unittest: any
+homepage: https://github.com/tomyeh/html5plus
 environment:
-  sdk: ">=0.4.7"
+  sdk: '>=0.6.5'
+dependencies:
+  source_maps: '>=0.6.5'
+dev_dependencies:
+  browser: '>=0.6.5'
+  path: '>=0.6.5'
+  unittest: '>=0.6.5'
