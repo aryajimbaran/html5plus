@@ -4,7 +4,7 @@ library support;
 import 'dart:async';
 import 'dart:io';
 import 'dart:collection';
-import 'package:path/path.dart' as pathos;
+import 'package:path/path.dart' as path;
 import 'package:html5plus/src/treebuilder.dart';
 import 'package:html5plus/dom.dart';
 import 'package:html5plus/dom_parsing.dart';
@@ -20,10 +20,10 @@ Map<String, TreeBuilderFactory> get treeTypes {
   return _treeTypes;
 }
 
-const testDataDir = 'test/data';
+final testDataDir = path.join(path.dirname(Platform.script), 'data');
 
 Iterable<String> getDataFiles(String subdirectory) {
-  var dir = new Directory(pathos.join(testDataDir, subdirectory));
+  var dir = new Directory(path.join(testDataDir, subdirectory));
   return dir.listSync().where((f) => f is File).map((f) => f.path);
 }
 

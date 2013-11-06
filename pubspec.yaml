@@ -12,6 +12,6 @@ dev_dependencies:
   path: any
   unittest: any
 
-version: 0.8.0
+version: 0.8.10
 environment:
-  sdk: ">=0.8.0"
+  sdk: ">=0.8.10"
