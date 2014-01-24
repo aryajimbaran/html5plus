@@ -1,7 +1,7 @@
 html5plus
 =========
 
-This is a fork of [html5lib](https://github.com/dart-lang/html5lib) to support XML better. For a pure HTML5 parser, please use [html5lib](https://github.com/dart-lang/html5lib) instead.
+This is a fork of [html5lib](https://github.com/dart-lang/html5lib) to parse XML documents. For a pure HTML5 parser, please use [html5lib](https://github.com/dart-lang/html5lib) instead.
 
 Differences to html5lib
 -----------------------
