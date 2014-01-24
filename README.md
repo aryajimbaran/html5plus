@@ -71,6 +71,8 @@ main() {
         <![CDATA here & there ]]>
       </foo>
       """);
-  print(document.outerHtml);
+
+  for (final node in document.nodes)
+    print("$node");
 }
 ```
