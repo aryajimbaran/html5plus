@@ -6,7 +6,7 @@ This is a fork of [html5lib](https://github.com/dart-lang/html5lib) to parse XML
 Differences to html5lib
 -----------------------
 
-Basically, html5plus is amlost exactly the same as html5lib, except:
+Basically, html5plus is amlost exactly the same as html5lib, except it is also able to parse simple XML documents:
 
 * Like XML, self-closing tags, such as &lt;div/>, are handled as the leaf nodes (this is the only reason this fork exists).
 
@@ -43,7 +43,8 @@ dependencies:
 Usage
 -----
 
-Parsing HTML is easy!
+###Parsing HTML is easy!
+
 ```dart
 import 'package:html5plus/parser.dart' show parse;
 import 'package:html5plus/dom.dart';
@@ -51,6 +52,25 @@ import 'package:html5plus/dom.dart';
 main() {
   var document = parse(
       '<body>Hello world! <a href="www.html5rocks.com">HTML5 rocks!');
+  print(document.outerHtml);
+}
+```
+
+###Parsing XML
+
+```dart
+import 'package:html5plus/parser.dart' show parse;
+import 'package:html5plus/dom.dart';
+
+main() {
+  var document = new HtmlParser(lowercaseElementName: false, 
+    lowercaseAttrName: false, cdataOK: true)
+    .parse("""
+      <!process this>
+      <foo>Hello world! <important>XML rocks!</important>
+        <![CDATA here & there ]]>
+      </foo>
+      """);
   print(document.outerHtml);
 }
 ```
