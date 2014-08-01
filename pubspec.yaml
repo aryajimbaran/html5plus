@@ -1,12 +1,12 @@
 name: html5plus
-version: 0.9.1
+version: 0.9.1+1
 authors:
 - Dart Team <misc@dartlang.org>
 - Tom Yeh <tomyeh@rikulo.org>
 description: A fork of html5lib for parsing HTML and XML documents.
 homepage: https://github.com/tomyeh/html5plus
 dependencies:
-  source_maps: ">=0.9.0"
+  source_maps: 0.9.4
   utf: ">=0.9.0"
 dev_dependencies:
   browser: ">=0.9.0"
